@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Drive.AI — Asistente de voz</title>
+<style>
+  :root { --bg:#0b0f19; --txt:#e5e7eb; --pri:#3b82f6; }
+  body{ background:var(--bg); color:var(--txt); font-family:system-ui, sans-serif; display:flex; flex-direction:column; align-items:center; gap:18px; padding:40px; }
+  h1{ font-weight:700; letter-spacing:.3px; }
+  button{ background:var(--pri); color:#fff; border:none; padding:14px 24px; border-radius:12px; font-size:16px; cursor:pointer }
+  .card{ width:min(680px, 90vw); background:#0f172a; border:1px solid #1f2a3c; border-radius:16px; padding:18px; }
+  .row{ display:flex; gap:10px; align-items:center; }
+  .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, monospace; white-space:pre-wrap }
+  .pill{ font-size:12px; padding:4px 8px; border:1px solid #22324a; border-radius:999px; background:#0f1e33; }
+</style>
+</head>
+<body>
+  <h1>🎤 Drive.AI</h1>
+
+  <div class="card">
+    <div class="row">
+      <button id="speakBtn">Hablar</button>
+      <span class="pill" id="status">Listo</span>
+    </div>
+    <p id="you" class="mono"></p>
+    <p id="assistant" class="mono"></p>
+    <hr style="border:0;border-top:1px solid #1f2a3c;margin:14px 0"/>
+    <div>
+      <strong>Intención detectada:</strong>
+      <pre id="intentBox" class="mono" style="margin:8px 0 0"></pre>
+    </div>
+  </div>
+
+<script>
+const statusEl = document.getElementById('status');
+const youEl = document.getElementById('you');
+const assistantEl = document.getElementById('assistant');
+const intentBox = document.getElementById('intentBox');
+const speakBtn = document.getElementById('speakBtn');
+
+// STT nativo (Web Speech). Para mejor precisión, luego podemos mandar audio a Whisper.
+const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+const recog = new Recognition();
+recog.lang = "es-AR"; // podés usar "es-ES" si preferís
+recog.interimResults = false;
+
+speakBtn.onclick = () => {
+  recog.start();
+  statusEl.textContent = "🎧 Escuchando…";
+};
+
+recog.onresult = async (e) => {
+  const text = e.results[0][0].transcript;
+  youEl.textContent = "Tú: " + text;
+  statusEl.textContent = "⏳ Pensando…";
+
+  try {
+    const r = await fetch("http://localhost:3001/api/intent", {
+      method: "POST",
+      headers: { "Content-Type":"application/json" },
+      body: JSON.stringify({ text })
+    });
+    const data = await r.json();
+
+    intentBox.textContent = JSON.stringify(data, null, 2);
+    assistantEl.textContent = "Asistente: " + (data.reply || "Listo.");
+    tts(data.reply || "Listo.");
+
+    // Ejecutar acción localmente (deeplinks sencillos)
+    routeAction(data.intent, data.slots);
+
+    statusEl.textContent = "✅ Hecho";
+  } catch (err) {
+    console.error(err);
+    assistantEl.textContent = "Asistente: Hubo un problema.";
+    tts("Hubo un problema.");
+    statusEl.textContent = "⚠️ Error";
+  }
+};
+
+recog.onerror = () => {
+  statusEl.textContent = "⚠️ Error de micrófono";
+};
+
+function tts(text) {
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = "es-AR";
+  speechSynthesis.speak(u);
+}
+
+/** Acciones básicas (lado cliente) con deeplinks/web-intents.
+ *  En app móvil PWA/nativa podés pedir permisos y usar APIs del sistema.
+ */
+function routeAction(intent, slots = {}) {
+  switch (intent) {
+    case 'call': {
+      // Si viene número directo
+      if (slots.phone) {
+        window.location.href = `tel:${slots.phone}`;
+        return;
+      }
+      // Si viene nombre, dejamos a usuario elegir contacto o resolvemos client-side
+      if (slots.contact) {
+        // Podrías mapear nombres->tel en tu app; aquí solo abrimos dialer
+        alert(`Preparando llamada a ${slots.contact}. Abrí el marcador y elegí el contacto.`);
+        window.location.href = `tel:`;
+      }
+      break;
+    }
+    case 'message': {
+      const app = (slots.app || 'whatsapp').toLowerCase();
+      const body = encodeURIComponent(slots.body || '');
+      const to = slots.to || ''; // número con código país sin +
+      if (app === 'whatsapp') {
+        // Si no tenés número, abrimos WhatsApp para elegir contacto con el texto
+        const base = to ? `https://wa.me/${to}?text=${body}` : `https://wa.me/?text=${body}`;
+        window.open(base, '_blank');
+      } else {
+        // SMS genérico
+        const smsUrl = to ? `sms:${to}?&body=${body}` : `sms:&body=${body}`;
+        window.location.href = smsUrl;
+      }
+      break;
+    }
+    case 'music': {
+      const service = (slots.service || 'spotify').toLowerCase();
+      const q = encodeURIComponent(slots.query || '');
+      if (service === 'spotify') {
+        // Búsqueda en Spotify
+        window.open(`https://open.spotify.com/search/${q}`, '_blank');
+      } else {
+        // Apple Music búsqueda web
+        window.open(`https://music.apple.com/search?term=${q}`, '_blank');
+      }
+      break;
+    }
+    case 'navigate': {
+      const dest = encodeURIComponent(slots.destination || '');
+      if (dest) {
+        // Google Maps
+        window.open(`https://www.google.com/maps/search/?api=1&query=${dest}`, '_blank');
+      }
+      break;
+    }
+    case 'smalltalk':
+    case 'unknown':
+    default:
+      // nada (ya hablamos por TTS)
+      break;
+  }
+}
+</script>
+</body>
+</html>
