@@ -1,5 +1,6 @@
-// api/intent.js — versión chat/completions + parseo de body en Vercel
+// api/intent.js — Vercel serverless
 
+// Parseo manual del body (en funciones serverless de Vercel req.body no viene parseado)
 async function readJsonBody(req) {
   const chunks = [];
   for await (const c of req) chunks.push(c);
@@ -17,20 +18,24 @@ export default async function handler(req, res) {
 
   const SYSTEM_PROMPT = `
 Eres un asistente de voz para auto (Drive.AI).
-Devuelve SIEMPRE SOLO JSON:
+Devuelves SIEMPRE SOLO JSON válido:
 {
  "intent": "call" | "message" | "music" | "navigate" | "smalltalk" | "general" | "unknown",
  "slots": {},
  "reply": "respuesta breve y natural en español"
 }
-Guía:
-- call: "llamá a..." {contact?, phone?}
-- message: "mandale un WhatsApp..." {app?, to?, body?}
-- music: "poné..." {query?, service?}
-- navigate: "llevame a..." {destination}
-- smalltalk: saludos
-- general: hora/fecha/clima
-- unknown: si no queda claro
+Reglas:
+- Si el usuario pide la HORA o la FECHA, NO inventes valores. Devuelve:
+  "intent":"general" y en "slots":{"topic":"time"} o {"topic":"date"} y una reply neutra (ej.: "Te digo la hora.").
+- "call": llamadas → slots { contact?, phone? }
+- "message": enviar mensajes/WhatsApp → slots { app?, to?, body? }
+- "music": reproducir/abrir música → slots { query?, service? }
+- "navigate": rutas/destinos → slots { destination }
+- "smalltalk": saludos/agradecimientos
+- "general": preguntas informativas no cubiertas (hora/fecha/clima, etc.)
+- "unknown": cuando no queda claro.
+
+Responde SOLO el JSON, sin texto adicional.
 `;
 
   try {
@@ -41,7 +46,7 @@ Guía:
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',           // estable y barato; luego podés cambiar a gpt-5
+        model: 'gpt-4o-mini',          // estable y barato; luego podés cambiar a gpt-5
         temperature: 0.3,
         response_format: { type: 'json_object' },
         messages: [
