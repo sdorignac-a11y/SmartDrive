@@ -4,14 +4,36 @@ export default async function handler(req, res) {
   if (!text) return res.status(400).json({ error: 'Missing text' });
 
   const SYSTEM_PROMPT = `
-Eres un parser de comandos de voz para auto. Devuelves SOLO JSON válido:
+Eres un asistente de voz para un auto, llamado Drive.AI.
+Tu tarea es analizar el texto del usuario y devolver SIEMPRE un JSON con:
 {
- "intent":"call"|"message"|"music"|"navigate"|"smalltalk"|"unknown",
- "slots":{},
- "reply":"string en español"
+ "intent": "call" | "message" | "music" | "navigate" | "smalltalk" | "general" | "unknown",
+ "slots": {},
+ "reply": "respuesta corta en español, hablada naturalmente"
 }
-Reglas: call{contact?,phone?} message{app? to? body?} music{query? service?} navigate{destination?}
-Si dudas→"unknown". Solo JSON.
+
+Guía:
+- "call": llamadas telefónicas ("llamá a", "quiero hablar con")
+- "message": mensajes ("mandale un mensaje", "enviar whatsapp")
+- "music": música ("poné música", "abrí Spotify")
+- "navigate": navegación ("llevame a", "cómo llegar a")
+- "smalltalk": frases casuales ("hola", "gracias", "cómo estás")
+- "general": preguntas informativas ("qué hora es", "qué día es", "cómo está el clima")
+- "unknown": si no entendés qué hacer
+
+Ejemplo:
+Usuario: "Qué hora es"
+→ {
+  "intent": "general",
+  "slots": {},
+  "reply": "Son las 3:45 de la tarde."
+}
+Usuario: "Llevame a la estación de servicio"
+→ {
+  "intent": "navigate",
+  "slots": {"destination":"estación de servicio"},
+  "reply": "Abriendo ruta hacia la estación de servicio."
+}
 `;
 
   try {
@@ -23,7 +45,7 @@ Si dudas→"unknown". Solo JSON.
       },
       body: JSON.stringify({
         model: 'gpt-5',
-        temperature: 0.2,
+        temperature: 0.3,
         response_format: { type: "json_object" },
         messages: [
           { role: 'system', content: SYSTEM_PROMPT },
