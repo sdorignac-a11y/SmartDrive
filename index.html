@@ -7,69 +7,57 @@
 <meta name="color-scheme" content="dark" />
 <style>
   :root{
-    --bg:#070b14; --bg2:#0b1222; --panel:#0f172a; --line:#1e2a41; --txt:#e6ecff; --muted:#9fb0d1;
-    --pri:#5aa9ff; --pri2:#22d3ee; --accent:#a78bfa; --ok:#22c55e; --err:#ef4444;
+    --bg:#070b14; --bg2:#0a1224; --panel:#0f172a; --line:#1e2a41;
+    --txt:#e6ecff; --muted:#a7b6d8; --pri:#5aa9ff; --accent:#22d3ee; --ok:#22c55e; --err:#ef4444;
   }
   *{box-sizing:border-box}
-  html,body{height:100%}
   body{
-    margin:0; font-family: ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Inter,Arial;
-    color:var(--txt); background:
-      radial-gradient(80vmax 80vmax at -10% -10%, #0a1330 0%, transparent 60%),
-      radial-gradient(70vmax 70vmax at 120% 10%, #061226 0%, transparent 55%),
+    margin:0; color:var(--txt);
+    background:
+      radial-gradient(80vmax 80vmax at -10% -10%, #0e1a3a 0%, transparent 60%),
+      radial-gradient(70vmax 70vmax at 120% 10%, #081427 0%, transparent 55%),
       linear-gradient(180deg, var(--bg) 0%, var(--bg2) 100%);
-    display:flex; align-items:center; justify-content:center; padding:28px;
+    font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial;
+    min-height:100vh; display:flex; align-items:center; justify-content:center; padding:28px;
   }
 
-  /* Shell */
-  .wrap{ width:min(920px, 96vw); }
-  .top{
-    display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:16px;
-  }
-  .brand{
-    display:flex; align-items:center; gap:12px; font-weight:800; letter-spacing:.3px; font-size:28px;
-    text-shadow:0 6px 22px rgba(90,169,255,.24);
-  }
-  .brand .emoji{
+  /* Layout */
+  .wrap{ width:min(980px, 96vw); display:grid; gap:16px }
+  .top{ display:flex; align-items:center; justify-content:space-between }
+  .brand{ display:flex; gap:10px; align-items:center; font-size:28px; font-weight:800; letter-spacing:.3px }
+  .brand-badge{
     width:34px;height:34px;border-radius:50%;
     background:radial-gradient(circle at 30% 30%, #fff, #9ad7ff 40%, transparent 60%);
     box-shadow:0 0 24px rgba(34,211,238,.32), inset 0 0 16px rgba(90,169,255,.28);
-    display:grid;place-items:center;
+    display:grid;place-items:center
   }
-
-  /* Card */
-  .card{
-    background:linear-gradient(180deg, rgba(18,26,46,.75), rgba(12,18,34,.75));
-    border:1px solid var(--line);
-    border-radius:20px;
-    box-shadow:
-      0 20px 60px rgba(0,0,0,.5),
-      inset 0 1px 0 rgba(255,255,255,.04);
-    padding:18px;
-  }
-  .controls{ display:flex; align-items:center; gap:10px; }
-  .btn{
-    -webkit-tap-highlight-color:transparent;
-    background:linear-gradient(180deg, #3b82f6, #2563eb);
-    border:1px solid #1b3f7a;
-    color:#fff; padding:14px 20px; font-weight:700; border-radius:12px; cursor:pointer;
-    box-shadow:0 8px 24px rgba(37,99,235,.35), inset 0 0 0 1px rgba(255,255,255,.06);
-    transition:transform .06s ease, filter .2s ease;
-  }
-  .btn:active{ transform:translateY(1px); filter:brightness(.96) }
   .pill{ font-size:12px; padding:6px 10px; border:1px solid #22324a; border-radius:999px; color:#cbd5e1; background:#0f1e33 }
 
-  .rows{ margin-top:12px; display:grid; gap:10px }
-  .row{ padding:10px 12px; background:#0c162c; border:1px solid #16223a; border-radius:12px }
-  .row strong{ color:#b9c9ea }
-  .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; white-space:pre-wrap; color:#dbe7ff }
-
-  hr{ border:0; border-top:1px solid #17223a; margin:12px 0 }
-
-  /* ——— Jarvis Widget ——— */
-  .jarvis{
-    position:relative; height:260px; display:grid; place-items:center; margin:10px 0 2px;
+  .grid{
+    display:grid; grid-template-columns: 1fr 1fr; gap:16px;
   }
+  @media (max-width:820px){ .grid{ grid-template-columns: 1fr; } }
+
+  .card{
+    background:linear-gradient(180deg, rgba(18,26,46,.72), rgba(12,18,34,.72));
+    border:1px solid var(--line); border-radius:20px; padding:18px;
+    box-shadow:0 20px 60px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.04);
+  }
+
+  /* Assistant panel */
+  .center{ display:grid; place-items:center; text-align:center; gap:14px; padding:16px 10px }
+  .btn{
+    background:linear-gradient(180deg, #3b82f6, #2563eb);
+    border:1px solid #1b3f7a; color:#fff; padding:14px 20px; font-weight:700;
+    border-radius:999px; cursor:pointer; transition:.12s ease;
+    box-shadow:0 8px 24px rgba(37,99,235,.35), inset 0 0 0 1px rgba(255,255,255,.06);
+  }
+  .btn:active{ transform:translateY(1px) }
+  .you, .assistant{ font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; white-space:pre-wrap }
+  .assistant{ color:#bfe6ff }
+
+  /* Jarvis widget */
+  .jarvis{ position:relative; height:260px; display:grid; place-items:center }
   .j-core{
     position:relative; width:180px; height:180px; border-radius:50%;
     background:
@@ -86,258 +74,255 @@
     filter:drop-shadow(0 0 10px rgba(34,211,238,.35));
     animation:rot 6s linear infinite paused;
   }
-  .j-dash{
-    position:absolute; inset:-38px; border-radius:50%; border:2px dashed rgba(99,102,241,.35);
-    animation:rot 16s linear infinite paused;
-  }
-  @keyframes rot{ to{ transform:rotate(360deg) } }
-  .j-pulse, .j-pulse::after{
-    position:absolute; inset:0; border-radius:50%; box-shadow:0 0 0 0 rgba(34,211,238,.34);
-    animation:pulse 2.2s ease-out infinite paused;
-  }
+  .j-dash{ position:absolute; inset:-38px; border-radius:50%; border:2px dashed rgba(99,102,241,.35); animation:rot 16s linear infinite paused }
+  .j-pulse, .j-pulse::after{ position:absolute; inset:0; border-radius:50%; box-shadow:0 0 0 0 rgba(34,211,238,.34); animation:pulse 2.2s ease-out infinite paused }
   .j-pulse::after{ content:""; animation-delay:.8s }
-  @keyframes pulse{ 0%{box-shadow:0 0 0 0 rgba(34,211,238,.34)} 70%{box-shadow:0 0 0 22px rgba(34,211,238,0)} 100%{box-shadow:0 0 0 0 rgba(34,211,238,0)} }
   .j-orbit{ position:absolute; inset:-64px; animation:rot 10s linear infinite paused }
-  .j-dot{
-    position:absolute; top:50%; left:0; transform:translate(-6px,-50%); width:8px; height:8px; border-radius:50%;
-    background:radial-gradient(circle at 30% 30%, #fff, #9bf0ff 60%, transparent 70%);
-    filter:blur(.2px) drop-shadow(0 0 6px rgba(110,231,255,.65));
-  }
+  .j-dot{ position:absolute; top:50%; left:0; transform:translate(-6px,-50%); width:8px; height:8px; border-radius:50%;
+          background:radial-gradient(circle at 30% 30%, #fff, #9bf0ff 60%, transparent 70%);
+          filter:blur(.2px) drop-shadow(0 0 6px rgba(110,231,255,.65)); }
   .j-dot:nth-child(2){ left:auto; right:0; transform:translate(6px,-50%) }
   .j-dot:nth-child(3){ top:auto; bottom:0; left:50%; transform:translate(-50%,6px) }
   .j-dot:nth-child(4){ top:0; left:50%; transform:translate(-50%,-6px) }
   .j-eq{ position:absolute; bottom:-24px; left:50%; transform:translateX(-50%); display:flex; gap:4px }
-  .j-bar{ width:6px; height:10px; border-radius:8px; background:linear-gradient(180deg, var(--pri2), var(--pri));
-    opacity:.85; box-shadow:0 0 12px rgba(34,211,238,.45); transition:height .12s ease; }
+  .j-bar{ width:6px; height:10px; border-radius:8px; background:linear-gradient(180deg, var(--accent), var(--pri));
+          opacity:.85; box-shadow:0 0 12px rgba(34,211,238,.45); transition:height .12s ease; }
   .speaking .j-ring, .speaking .j-dash, .speaking .j-orbit, .speaking .j-pulse{ animation-play-state:running }
   .speaking .j-core{ box-shadow:0 0 58px rgba(34,211,238,.32), inset 0 0 38px rgba(96,165,250,.24) }
+  @keyframes rot{ to{ transform:rotate(360deg) } }
+  @keyframes pulse{ 0%{box-shadow:0 0 0 0 rgba(34,211,238,.34)} 70%{box-shadow:0 0 0 22px rgba(34,211,238,0)} 100%{box-shadow:0 0 0 0 rgba(34,211,238,0)} }
 
-  .bad{ color:#fecaca }
-  .good{ color:#86efac }
+  /* Driving HUD */
+  .hud{ display:grid; gap:12px; padding:6px }
+  .hud .row{ display:flex; align-items:center; justify-content:space-between; gap:10px;
+             background:#0c162c; border:1px solid #16223a; border-radius:14px; padding:12px 14px; }
+  .hud .title{ color:#cfe3ff; font-weight:700; letter-spacing:.2px }
+  .hud .value{ color:#9fd9ff; font-weight:600 }
+  .hud .btn-mini{ border:1px solid #22324a; background:#0f1e33; color:#cbd5e1; border-radius:10px; padding:6px 10px; cursor:pointer }
+  .ok{ color:var(--ok) } .bad{ color:#fecaca }
 </style>
 </head>
 <body>
   <div class="wrap">
     <div class="top">
-      <div class="brand">
-        <span class="emoji">🎙️</span> Drive.AI
-      </div>
+      <div class="brand"><span class="brand-badge">🎙️</span>Drive.AI</div>
       <div class="pill" id="appStatus">Listo</div>
     </div>
 
-    <div class="card">
-      <!-- Jarvis visual -->
-      <div class="jarvis" id="jarvis">
-        <div class="j-core">
-          <div class="j-ring"></div>
-          <div class="j-dash"></div>
-          <div class="j-pulse"></div>
-          <div class="j-orbit"><span class="j-dot"></span><span class="j-dot"></span><span class="j-dot"></span><span class="j-dot"></span></div>
-          <div class="j-eq" id="jEq"></div>
+    <div class="grid">
+      <!-- Assistant panel -->
+      <section class="card center">
+        <div id="jarvis" class="jarvis">
+          <div class="j-core">
+            <div class="j-ring"></div><div class="j-dash"></div><div class="j-pulse"></div>
+            <div class="j-orbit"><span class="j-dot"></span><span class="j-dot"></span><span class="j-dot"></span><span class="j-dot"></span></div>
+            <div class="j-eq" id="jEq"></div>
+          </div>
         </div>
-      </div>
 
-      <div class="controls">
-        <button class="btn" id="speakBtn">Hablar</button>
-        <span class="pill" id="status">En espera</span>
-      </div>
+        <p id="you" class="you"></p>
+        <p id="assistant" class="assistant"></p>
 
-      <div class="rows">
-        <div class="row"><strong>Tú:</strong> <span id="you" class="mono"></span></div>
-        <div class="row"><strong>Asistente:</strong> <span id="assistant" class="mono"></span></div>
-      </div>
+        <button id="speakBtn" class="btn">Hablar</button>
+        <div id="status" class="pill" style="margin-top:6px">En espera</div>
+      </section>
 
-      <hr>
-      <div class="row">
-        <strong>Intención detectada:</strong>
-        <pre id="intentBox" class="mono" style="margin:8px 0 0; font-size:13px;"></pre>
-      </div>
+      <!-- Driving HUD -->
+      <section class="card hud">
+        <div class="row">
+          <div>
+            <div class="title">Ubicación</div>
+            <div class="value" id="hudPlace">—</div>
+          </div>
+          <button id="locBtn" class="btn-mini">Actualizar</button>
+        </div>
+
+        <div class="row">
+          <div>
+            <div class="title">Clima actual</div>
+            <div class="value"><span id="hudTemp">—</span> · <span id="hudCond">—</span></div>
+          </div>
+          <div class="pill" id="hudUnits">°C</div>
+        </div>
+
+        <div class="row">
+          <div>
+            <div class="title">Estado</div>
+            <div class="value" id="hudStatus">Listo</div>
+          </div>
+          <div id="hudSignal" class="ok">●</div>
+        </div>
+      </section>
     </div>
   </div>
 
 <script>
-/* ---------- Jarvis visualizer ---------- */
+/* ===== Jarvis visualizer ===== */
 class JarvisViz {
   constructor(root){
-    this.root = root;
-    this.eq = document.getElementById('jEq');
-    this.bars = [];
-    this.timer = null;
+    this.root = root; this.eq = document.getElementById('jEq'); this.timer=null; this.bars=[];
     for(let i=0;i<16;i++){ const b=document.createElement('div'); b.className='j-bar'; this.eq.appendChild(b); this.bars.push(b); }
   }
-  start(){
-    if(this.timer) return;
-    this.root.classList.add('speaking');
-    let t=0;
-    this.timer=setInterval(()=>{
-      t+=0.12;
-      for(let i=0;i<this.bars.length;i++){
-        const h=10 + Math.abs(Math.sin(t*(0.85+i*0.035))*28) + (Math.random()*18);
-        this.bars[i].style.height=`${Math.min(72,h)}px`;
-      }
-    },60);
-  }
-  stop(){
-    if(!this.timer) return;
-    clearInterval(this.timer); this.timer=null;
-    this.root.classList.remove('speaking');
-    this.bars.forEach(b=>b.style.height='10px');
-  }
+  start(){ if(this.timer) return; this.root.classList.add('speaking'); let t=0; this.timer=setInterval(()=>{ t+=0.12; for(let i=0;i<this.bars.length;i++){ const h=10+Math.abs(Math.sin(t*(0.85+i*0.035))*28)+(Math.random()*18); this.bars[i].style.height=`${Math.min(72,h)}px`; }},60); }
+  stop(){ if(!this.timer) return; clearInterval(this.timer); this.timer=null; this.root.classList.remove('speaking'); this.bars.forEach(b=>b.style.height='10px'); }
 }
 const jarvis = new JarvisViz(document.getElementById('jarvis'));
 
-/* ---------- DOM refs ---------- */
+/* ===== Refs ===== */
 const appStatus = document.getElementById('appStatus');
 const statusEl = document.getElementById('status');
 const youEl = document.getElementById('you');
 const assistantEl = document.getElementById('assistant');
-const intentBox = document.getElementById('intentBox');
 const speakBtn = document.getElementById('speakBtn');
 
-/* ---------- STT ---------- */
+const hudPlace = document.getElementById('hudPlace');
+const hudTemp  = document.getElementById('hudTemp');
+const hudCond  = document.getElementById('hudCond');
+const hudUnits = document.getElementById('hudUnits');
+const hudStatus= document.getElementById('hudStatus');
+const hudSignal= document.getElementById('hudSignal');
+
+/* ===== STT ===== */
 const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 const recog = new Recognition();
-recog.lang = "es-AR"; // o "es-ES"
+recog.lang = "es-AR";
 recog.interimResults = false;
 
 speakBtn.onclick = () => {
   recog.start();
   statusEl.textContent = "🎧 Escuchando…";
   appStatus.textContent = "Escuchando…";
+  jarvis.start();
 };
 
-recog.onend = () => {
-  if(statusEl.textContent.includes("Escuchando")) {
-    statusEl.textContent = "⏳ Procesando…";
-  }
-};
+recog.onend = () => { if(!speechSynthesis.speaking) jarvis.stop(); };
+recog.onerror = () => { statusEl.textContent="⚠️ Error de micrófono"; appStatus.textContent="Micrófono"; hudSignal.className="bad" };
 
-recog.onerror = () => {
-  statusEl.textContent = "⚠️ Error de micrófono";
-  appStatus.textContent = "Micrófono";
-  appStatus.className = "pill bad";
-};
-
-/* ---------- TTS (con Jarvis anim) ---------- */
+/* ===== TTS (con animación) ===== */
 function ttsJarvis(text, opts={}){
-  try{
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = opts.lang || "es-AR";
-    u.rate = opts.rate || 1;
-    u.pitch = opts.pitch || 1;
-    u.onstart = ()=>{ jarvis.start(); appStatus.textContent="Hablando"; appStatus.className="pill good"; };
-    u.onend = ()=>{ jarvis.stop(); appStatus.textContent="Listo"; appStatus.className="pill"; };
-    speechSynthesis.speak(u);
-  }catch(e){
-    jarvis.start(); setTimeout(()=>jarvis.stop(), Math.min(4000, (text||"").length*70));
-  }
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = opts.lang || "es-AR";
+  u.onstart = ()=>{ jarvis.start(); appStatus.textContent="Hablando" };
+  u.onend   = ()=>{ jarvis.stop();  appStatus.textContent="Listo" };
+  speechSynthesis.speak(u);
 }
 
-/* ---------- Atajos locales (hora/fecha) ---------- */
-function maybeLocalIntent(text) {
-  const t = (text || '').toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '');
+/* ===== Utilidades de clima/ubicación ===== */
+let lastWeather = null; // cache simple
+async function getLocation(){
+  hudStatus.textContent = "Buscando ubicación…";
+  return new Promise((resolve,reject)=>{
+    if(!navigator.geolocation) return reject(new Error("Sin geolocalización"));
+    navigator.geolocation.getCurrentPosition(
+      pos=>resolve({lat:pos.coords.latitude, lon:pos.coords.longitude}),
+      err=>reject(err), { enableHighAccuracy:true, timeout:10000, maximumAge:60000 }
+    );
+  });
+}
+async function fetchWeather(lat, lon){
+  // Open-Meteo: sin API key
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&timezone=auto`;
+  const r = await fetch(url); const data = await r.json();
+  const cw = data?.current_weather;
+  let cond = "Despejado";
+  const code = cw?.weathercode;
+  if(code!=null){
+    if([0].includes(code)) cond="Despejado";
+    else if([1,2,3].includes(code)) cond="Parcialmente nublado";
+    else if([45,48].includes(code)) cond="Niebla";
+    else if([51,53,55,56,57].includes(code)) cond="Llovizna";
+    else if([61,63,65,66,67,80,81,82].includes(code)) cond="Lluvia";
+    else if([71,73,75,77,85,86].includes(code)) cond="Nieve";
+    else if([95,96,99].includes(code)) cond="Tormenta";
+  }
+  return { temp: Math.round(cw?.temperature ?? 0), cond };
+}
+async function reverseGeocode(lat, lon){
+  const url = `https://geocoding-api.open-meteo.com/v1/reverse?latitude=${lat}&longitude=${lon}&language=es`;
+  const r = await fetch(url); const data = await r.json(); const p = data?.results?.[0];
+  return p ? `${p.name}${p.admin1 ? ', '+p.admin1 : ''}` : `${lat.toFixed(2)}, ${lon.toFixed(2)}`;
+}
+async function updateHUD(){
+  try{
+    hudSignal.className="ok";
+    const {lat, lon} = await getLocation();
+    const [place, w] = await Promise.all([reverseGeocode(lat,lon), fetchWeather(lat,lon)]);
+    lastWeather = { place, ...w };
+    hudPlace.textContent = place;
+    hudTemp.textContent  = `${w.temp}°`;
+    hudCond.textContent  = w.cond;
+    hudStatus.textContent= "Listo";
+  }catch(e){
+    hudStatus.textContent = "Sin permisos de ubicación";
+    hudSignal.className="bad";
+  }
+}
+document.getElementById('locBtn').onclick = updateHUD;
+// carga inicial
+updateHUD();
+
+/* ===== Intents locales (hora/fecha/clima/ubicación) ===== */
+function maybeLocalIntent(text){
+  const t = (text||'').toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu,'');
   // Hora
   if (/(^|\s)(que|qué)?\s*hora(\s*es)?(\s|$)/.test(t) || t.includes('decime la hora') || t.includes('dime la hora')) {
-    const now = new Date();
-    const hora = now.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
-    const reply = `Son las ${hora}.`;
-    assistantEl.textContent = reply;
-    intentBox.textContent = JSON.stringify({ intent:"general", slots:{ topic:"time" }, reply }, null, 2);
-    ttsJarvis(reply);
-    statusEl.textContent = "✅ Hecho";
-    return true;
+    const h = new Date().toLocaleTimeString('es-AR', { hour:'2-digit', minute:'2-digit' });
+    const reply = `Son las ${h}.`;
+    assistantEl.textContent = reply; statusEl.textContent="✅ Hecho"; ttsJarvis(reply); return true;
   }
   // Fecha
   if (t.includes('que dia es') || t.includes('qué dia es') || t.includes('que fecha es') || t.includes('fecha de hoy')) {
-    const now = new Date();
-    const fecha = now.toLocaleDateString('es-AR', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
-    const reply = `Hoy es ${fecha}.`;
-    assistantEl.textContent = reply;
-    intentBox.textContent = JSON.stringify({ intent:"general", slots:{ topic:"date" }, reply }, null, 2);
-    ttsJarvis(reply);
-    statusEl.textContent = "✅ Hecho";
+    const f = new Date().toLocaleDateString('es-AR',{weekday:'long', day:'numeric', month:'long'});
+    const reply = `Hoy es ${f}.`;
+    assistantEl.textContent = reply; statusEl.textContent="✅ Hecho"; ttsJarvis(reply); return true;
+  }
+  // Clima
+  if (t.includes('clima') || t.includes('temperatura') || t.includes('tiempo')) {
+    if(lastWeather){
+      const reply = `${lastWeather.place}: ${lastWeather.temp} grados, ${lastWeather.cond}.`;
+      assistantEl.textContent = reply; statusEl.textContent="✅ Hecho"; ttsJarvis(reply);
+    } else {
+      assistantEl.textContent = "Actualizo el clima…"; ttsJarvis("Actualizo el clima"); updateHUD();
+    }
+    return true;
+  }
+  // Ubicación
+  if (t.includes('donde estoy') || t.includes('dónde estoy') || t.includes('ubicacion') || t.includes('ubicación')) {
+    if(lastWeather){
+      const reply = `Estás cerca de ${lastWeather.place}.`;
+      assistantEl.textContent = reply; statusEl.textContent="✅ Hecho"; ttsJarvis(reply);
+    } else {
+      assistantEl.textContent = "Necesito tu ubicación. Tocá actualizar."; ttsJarvis("Necesito tu ubicación. Tocá actualizar.");
+    }
     return true;
   }
   return false;
 }
 
-/* ---------- Intent → acciones ---------- */
-function routeAction(intent, slots = {}) {
-  switch (intent) {
-    case 'call': {
-      if (slots.phone) { window.location.href = `tel:${slots.phone}`; return; }
-      if (slots.contact) {
-        alert(`Preparando llamada a ${slots.contact}.`);
-        window.location.href = `tel:`; // abre marcador
-      }
-      break;
-    }
-    case 'message': {
-      const app = (slots.app || 'whatsapp').toLowerCase();
-      const body = encodeURIComponent(slots.body || '');
-      const to = slots.to || ''; // número con código país sin +
-      if (app === 'whatsapp') {
-        const base = to ? `https://wa.me/${to}?text=${body}` : `https://wa.me/?text=${body}`;
-        window.open(base, '_blank');
-      } else {
-        window.location.href = to ? `sms:${to}?&body=${body}` : `sms:&body=${body}`;
-      }
-      break;
-    }
-    case 'music': {
-      const service = (slots.service || 'spotify').toLowerCase();
-      const q = encodeURIComponent(slots.query || '');
-      if (service === 'spotify') window.open(`https://open.spotify.com/search/${q}`, '_blank');
-      else window.open(`https://music.apple.com/search?term=${q}`, '_blank');
-      break;
-    }
-    case 'navigate': {
-      const dest = encodeURIComponent(slots.destination || '');
-      if (dest) window.open(`https://www.google.com/maps/search/?api=1&query=${dest}`, '_blank');
-      break;
-    }
-    case 'smalltalk':
-    case 'unknown':
-    default: break;
-  }
-}
-
-/* ---------- Main flow ---------- */
+/* ===== Main flow ===== */
 recog.onresult = async (e) => {
   const text = e.results[0][0].transcript;
   youEl.textContent = text;
   statusEl.textContent = "⏳ Procesando…";
 
-  // Resolver local primero (hora/fecha)
   if (maybeLocalIntent(text)) return;
 
-  try {
+  try{
     const r = await fetch("/api/intent", {
-      method: "POST",
-      headers: { "Content-Type":"application/json" },
+      method: "POST", headers: { "Content-Type":"application/json" },
       body: JSON.stringify({ text })
     });
     const data = await r.json();
-
-    if (!r.ok || data.error) {
-      assistantEl.textContent = "Hubo un problema.";
-      intentBox.textContent = JSON.stringify(data, null, 2);
-      statusEl.textContent = "⚠️ Error";
-      ttsJarvis("Hubo un problema.");
-      return;
-    }
-
-    intentBox.textContent = JSON.stringify(data, null, 2);
     const reply = data.reply || "Listo.";
     assistantEl.textContent = reply;
     ttsJarvis(reply);
-    routeAction(data.intent, data.slots);
     statusEl.textContent = "✅ Hecho";
-  } catch (err) {
+    // Si la IA dice algo como “te muestro el clima”, refrescamos HUD
+    if (/clima|tiempo|temperatura/i.test(text)) updateHUD();
+  }catch(err){
     console.error(err);
-    assistantEl.textContent = "Hubo un problema.";
-    statusEl.textContent = "⚠️ Error";
-    ttsJarvis("Hubo un problema.");
+    const reply = "Hubo un problema conectando con la IA.";
+    assistantEl.textContent = reply; statusEl.textContent="⚠️ Error"; ttsJarvis(reply);
   }
 };
 </script>
