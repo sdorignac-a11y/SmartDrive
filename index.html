@@ -56,7 +56,7 @@ recog.onresult = async (e) => {
   statusEl.textContent = "⏳ Pensando…";
 
   try {
-    const r = await fetch("http://localhost:3001/api/intent", {
+   const r = await fetch("/api/intent", {
       method: "POST",
       headers: { "Content-Type":"application/json" },
       body: JSON.stringify({ text })
