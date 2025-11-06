@@ -4,107 +4,271 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Drive.AI — Asistente de voz</title>
+<meta name="color-scheme" content="dark" />
 <style>
-  :root { --bg:#0b0f19; --txt:#e5e7eb; --pri:#3b82f6; }
-  body{ background:var(--bg); color:var(--txt); font-family:system-ui, sans-serif; display:flex; flex-direction:column; align-items:center; gap:18px; padding:40px; }
-  h1{ font-weight:700; letter-spacing:.3px; }
-  button{ background:var(--pri); color:#fff; border:none; padding:14px 24px; border-radius:12px; font-size:16px; cursor:pointer }
-  .card{ width:min(680px, 90vw); background:#0f172a; border:1px solid #1f2a3c; border-radius:16px; padding:18px; }
-  .row{ display:flex; gap:10px; align-items:center; }
-  .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, monospace; white-space:pre-wrap }
-  .pill{ font-size:12px; padding:4px 8px; border:1px solid #22324a; border-radius:999px; background:#0f1e33; }
+  :root{
+    --bg:#070b14; --bg2:#0b1222; --panel:#0f172a; --line:#1e2a41; --txt:#e6ecff; --muted:#9fb0d1;
+    --pri:#5aa9ff; --pri2:#22d3ee; --accent:#a78bfa; --ok:#22c55e; --err:#ef4444;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0; font-family: ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Inter,Arial;
+    color:var(--txt); background:
+      radial-gradient(80vmax 80vmax at -10% -10%, #0a1330 0%, transparent 60%),
+      radial-gradient(70vmax 70vmax at 120% 10%, #061226 0%, transparent 55%),
+      linear-gradient(180deg, var(--bg) 0%, var(--bg2) 100%);
+    display:flex; align-items:center; justify-content:center; padding:28px;
+  }
+
+  /* Shell */
+  .wrap{ width:min(920px, 96vw); }
+  .top{
+    display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:16px;
+  }
+  .brand{
+    display:flex; align-items:center; gap:12px; font-weight:800; letter-spacing:.3px; font-size:28px;
+    text-shadow:0 6px 22px rgba(90,169,255,.24);
+  }
+  .brand .emoji{
+    width:34px;height:34px;border-radius:50%;
+    background:radial-gradient(circle at 30% 30%, #fff, #9ad7ff 40%, transparent 60%);
+    box-shadow:0 0 24px rgba(34,211,238,.32), inset 0 0 16px rgba(90,169,255,.28);
+    display:grid;place-items:center;
+  }
+
+  /* Card */
+  .card{
+    background:linear-gradient(180deg, rgba(18,26,46,.75), rgba(12,18,34,.75));
+    border:1px solid var(--line);
+    border-radius:20px;
+    box-shadow:
+      0 20px 60px rgba(0,0,0,.5),
+      inset 0 1px 0 rgba(255,255,255,.04);
+    padding:18px;
+  }
+  .controls{ display:flex; align-items:center; gap:10px; }
+  .btn{
+    -webkit-tap-highlight-color:transparent;
+    background:linear-gradient(180deg, #3b82f6, #2563eb);
+    border:1px solid #1b3f7a;
+    color:#fff; padding:14px 20px; font-weight:700; border-radius:12px; cursor:pointer;
+    box-shadow:0 8px 24px rgba(37,99,235,.35), inset 0 0 0 1px rgba(255,255,255,.06);
+    transition:transform .06s ease, filter .2s ease;
+  }
+  .btn:active{ transform:translateY(1px); filter:brightness(.96) }
+  .pill{ font-size:12px; padding:6px 10px; border:1px solid #22324a; border-radius:999px; color:#cbd5e1; background:#0f1e33 }
+
+  .rows{ margin-top:12px; display:grid; gap:10px }
+  .row{ padding:10px 12px; background:#0c162c; border:1px solid #16223a; border-radius:12px }
+  .row strong{ color:#b9c9ea }
+  .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; white-space:pre-wrap; color:#dbe7ff }
+
+  hr{ border:0; border-top:1px solid #17223a; margin:12px 0 }
+
+  /* ——— Jarvis Widget ——— */
+  .jarvis{
+    position:relative; height:260px; display:grid; place-items:center; margin:10px 0 2px;
+  }
+  .j-core{
+    position:relative; width:180px; height:180px; border-radius:50%;
+    background:
+      radial-gradient(120px 120px at 50% 50%, rgba(34,211,238,.18), transparent 60%),
+      radial-gradient(90px 90px at 50% 50%, rgba(96,165,250,.16), transparent 70%),
+      #081225;
+    box-shadow:0 0 42px rgba(34,211,238,.18), inset 0 0 30px rgba(96,165,250,.15);
+  }
+  .j-ring{
+    position:absolute; inset:-18px; border-radius:50%;
+    background:conic-gradient(from 0deg, rgba(90,169,255,.38), rgba(167,139,250,.45), rgba(34,211,238,.38), rgba(90,169,255,.38));
+    -webkit-mask:radial-gradient(farthest-side, transparent calc(100% - 10px), #000 0);
+            mask:radial-gradient(farthest-side, transparent calc(100% - 10px), #000 0);
+    filter:drop-shadow(0 0 10px rgba(34,211,238,.35));
+    animation:rot 6s linear infinite paused;
+  }
+  .j-dash{
+    position:absolute; inset:-38px; border-radius:50%; border:2px dashed rgba(99,102,241,.35);
+    animation:rot 16s linear infinite paused;
+  }
+  @keyframes rot{ to{ transform:rotate(360deg) } }
+  .j-pulse, .j-pulse::after{
+    position:absolute; inset:0; border-radius:50%; box-shadow:0 0 0 0 rgba(34,211,238,.34);
+    animation:pulse 2.2s ease-out infinite paused;
+  }
+  .j-pulse::after{ content:""; animation-delay:.8s }
+  @keyframes pulse{ 0%{box-shadow:0 0 0 0 rgba(34,211,238,.34)} 70%{box-shadow:0 0 0 22px rgba(34,211,238,0)} 100%{box-shadow:0 0 0 0 rgba(34,211,238,0)} }
+  .j-orbit{ position:absolute; inset:-64px; animation:rot 10s linear infinite paused }
+  .j-dot{
+    position:absolute; top:50%; left:0; transform:translate(-6px,-50%); width:8px; height:8px; border-radius:50%;
+    background:radial-gradient(circle at 30% 30%, #fff, #9bf0ff 60%, transparent 70%);
+    filter:blur(.2px) drop-shadow(0 0 6px rgba(110,231,255,.65));
+  }
+  .j-dot:nth-child(2){ left:auto; right:0; transform:translate(6px,-50%) }
+  .j-dot:nth-child(3){ top:auto; bottom:0; left:50%; transform:translate(-50%,6px) }
+  .j-dot:nth-child(4){ top:0; left:50%; transform:translate(-50%,-6px) }
+  .j-eq{ position:absolute; bottom:-24px; left:50%; transform:translateX(-50%); display:flex; gap:4px }
+  .j-bar{ width:6px; height:10px; border-radius:8px; background:linear-gradient(180deg, var(--pri2), var(--pri));
+    opacity:.85; box-shadow:0 0 12px rgba(34,211,238,.45); transition:height .12s ease; }
+  .speaking .j-ring, .speaking .j-dash, .speaking .j-orbit, .speaking .j-pulse{ animation-play-state:running }
+  .speaking .j-core{ box-shadow:0 0 58px rgba(34,211,238,.32), inset 0 0 38px rgba(96,165,250,.24) }
+
+  .bad{ color:#fecaca }
+  .good{ color:#86efac }
 </style>
 </head>
 <body>
-  <h1>🎤 Drive.AI</h1>
-
-  <div class="card">
-    <div class="row">
-      <button id="speakBtn">Hablar</button>
-      <span class="pill" id="status">Listo</span>
+  <div class="wrap">
+    <div class="top">
+      <div class="brand">
+        <span class="emoji">🎙️</span> Drive.AI
+      </div>
+      <div class="pill" id="appStatus">Listo</div>
     </div>
-    <p id="you" class="mono"></p>
-    <p id="assistant" class="mono"></p>
-    <hr style="border:0;border-top:1px solid #1f2a3c;margin:14px 0"/>
-    <div>
-      <strong>Intención detectada:</strong>
-      <pre id="intentBox" class="mono" style="margin:8px 0 0"></pre>
+
+    <div class="card">
+      <!-- Jarvis visual -->
+      <div class="jarvis" id="jarvis">
+        <div class="j-core">
+          <div class="j-ring"></div>
+          <div class="j-dash"></div>
+          <div class="j-pulse"></div>
+          <div class="j-orbit"><span class="j-dot"></span><span class="j-dot"></span><span class="j-dot"></span><span class="j-dot"></span></div>
+          <div class="j-eq" id="jEq"></div>
+        </div>
+      </div>
+
+      <div class="controls">
+        <button class="btn" id="speakBtn">Hablar</button>
+        <span class="pill" id="status">En espera</span>
+      </div>
+
+      <div class="rows">
+        <div class="row"><strong>Tú:</strong> <span id="you" class="mono"></span></div>
+        <div class="row"><strong>Asistente:</strong> <span id="assistant" class="mono"></span></div>
+      </div>
+
+      <hr>
+      <div class="row">
+        <strong>Intención detectada:</strong>
+        <pre id="intentBox" class="mono" style="margin:8px 0 0; font-size:13px;"></pre>
+      </div>
     </div>
   </div>
 
 <script>
+/* ---------- Jarvis visualizer ---------- */
+class JarvisViz {
+  constructor(root){
+    this.root = root;
+    this.eq = document.getElementById('jEq');
+    this.bars = [];
+    this.timer = null;
+    for(let i=0;i<16;i++){ const b=document.createElement('div'); b.className='j-bar'; this.eq.appendChild(b); this.bars.push(b); }
+  }
+  start(){
+    if(this.timer) return;
+    this.root.classList.add('speaking');
+    let t=0;
+    this.timer=setInterval(()=>{
+      t+=0.12;
+      for(let i=0;i<this.bars.length;i++){
+        const h=10 + Math.abs(Math.sin(t*(0.85+i*0.035))*28) + (Math.random()*18);
+        this.bars[i].style.height=`${Math.min(72,h)}px`;
+      }
+    },60);
+  }
+  stop(){
+    if(!this.timer) return;
+    clearInterval(this.timer); this.timer=null;
+    this.root.classList.remove('speaking');
+    this.bars.forEach(b=>b.style.height='10px');
+  }
+}
+const jarvis = new JarvisViz(document.getElementById('jarvis'));
+
+/* ---------- DOM refs ---------- */
+const appStatus = document.getElementById('appStatus');
 const statusEl = document.getElementById('status');
 const youEl = document.getElementById('you');
 const assistantEl = document.getElementById('assistant');
 const intentBox = document.getElementById('intentBox');
 const speakBtn = document.getElementById('speakBtn');
 
-// STT nativo (Web Speech). Para mejor precisión, luego podemos mandar audio a Whisper.
+/* ---------- STT ---------- */
 const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 const recog = new Recognition();
-recog.lang = "es-AR"; // podés usar "es-ES" si preferís
+recog.lang = "es-AR"; // o "es-ES"
 recog.interimResults = false;
 
 speakBtn.onclick = () => {
   recog.start();
   statusEl.textContent = "🎧 Escuchando…";
+  appStatus.textContent = "Escuchando…";
 };
 
-recog.onresult = async (e) => {
-  const text = e.results[0][0].transcript;
-  youEl.textContent = "Tú: " + text;
-  statusEl.textContent = "⏳ Pensando…";
-
-  try {
-   const r = await fetch("/api/intent", {
-      method: "POST",
-      headers: { "Content-Type":"application/json" },
-      body: JSON.stringify({ text })
-    });
-    const data = await r.json();
-
-    intentBox.textContent = JSON.stringify(data, null, 2);
-    assistantEl.textContent = "Asistente: " + (data.reply || "Listo.");
-    tts(data.reply || "Listo.");
-
-    // Ejecutar acción localmente (deeplinks sencillos)
-    routeAction(data.intent, data.slots);
-
-    statusEl.textContent = "✅ Hecho";
-  } catch (err) {
-    console.error(err);
-    assistantEl.textContent = "Asistente: Hubo un problema.";
-    tts("Hubo un problema.");
-    statusEl.textContent = "⚠️ Error";
+recog.onend = () => {
+  if(statusEl.textContent.includes("Escuchando")) {
+    statusEl.textContent = "⏳ Procesando…";
   }
 };
 
 recog.onerror = () => {
   statusEl.textContent = "⚠️ Error de micrófono";
+  appStatus.textContent = "Micrófono";
+  appStatus.className = "pill bad";
 };
 
-function tts(text) {
-  const u = new SpeechSynthesisUtterance(text);
-  u.lang = "es-AR";
-  speechSynthesis.speak(u);
+/* ---------- TTS (con Jarvis anim) ---------- */
+function ttsJarvis(text, opts={}){
+  try{
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = opts.lang || "es-AR";
+    u.rate = opts.rate || 1;
+    u.pitch = opts.pitch || 1;
+    u.onstart = ()=>{ jarvis.start(); appStatus.textContent="Hablando"; appStatus.className="pill good"; };
+    u.onend = ()=>{ jarvis.stop(); appStatus.textContent="Listo"; appStatus.className="pill"; };
+    speechSynthesis.speak(u);
+  }catch(e){
+    jarvis.start(); setTimeout(()=>jarvis.stop(), Math.min(4000, (text||"").length*70));
+  }
 }
 
-/** Acciones básicas (lado cliente) con deeplinks/web-intents.
- *  En app móvil PWA/nativa podés pedir permisos y usar APIs del sistema.
- */
+/* ---------- Atajos locales (hora/fecha) ---------- */
+function maybeLocalIntent(text) {
+  const t = (text || '').toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '');
+  // Hora
+  if (/(^|\s)(que|qué)?\s*hora(\s*es)?(\s|$)/.test(t) || t.includes('decime la hora') || t.includes('dime la hora')) {
+    const now = new Date();
+    const hora = now.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+    const reply = `Son las ${hora}.`;
+    assistantEl.textContent = reply;
+    intentBox.textContent = JSON.stringify({ intent:"general", slots:{ topic:"time" }, reply }, null, 2);
+    ttsJarvis(reply);
+    statusEl.textContent = "✅ Hecho";
+    return true;
+  }
+  // Fecha
+  if (t.includes('que dia es') || t.includes('qué dia es') || t.includes('que fecha es') || t.includes('fecha de hoy')) {
+    const now = new Date();
+    const fecha = now.toLocaleDateString('es-AR', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+    const reply = `Hoy es ${fecha}.`;
+    assistantEl.textContent = reply;
+    intentBox.textContent = JSON.stringify({ intent:"general", slots:{ topic:"date" }, reply }, null, 2);
+    ttsJarvis(reply);
+    statusEl.textContent = "✅ Hecho";
+    return true;
+  }
+  return false;
+}
+
+/* ---------- Intent → acciones ---------- */
 function routeAction(intent, slots = {}) {
   switch (intent) {
     case 'call': {
-      // Si viene número directo
-      if (slots.phone) {
-        window.location.href = `tel:${slots.phone}`;
-        return;
-      }
-      // Si viene nombre, dejamos a usuario elegir contacto o resolvemos client-side
+      if (slots.phone) { window.location.href = `tel:${slots.phone}`; return; }
       if (slots.contact) {
-        // Podrías mapear nombres->tel en tu app; aquí solo abrimos dialer
-        alert(`Preparando llamada a ${slots.contact}. Abrí el marcador y elegí el contacto.`);
-        window.location.href = `tel:`;
+        alert(`Preparando llamada a ${slots.contact}.`);
+        window.location.href = `tel:`; // abre marcador
       }
       break;
     }
@@ -113,43 +277,69 @@ function routeAction(intent, slots = {}) {
       const body = encodeURIComponent(slots.body || '');
       const to = slots.to || ''; // número con código país sin +
       if (app === 'whatsapp') {
-        // Si no tenés número, abrimos WhatsApp para elegir contacto con el texto
         const base = to ? `https://wa.me/${to}?text=${body}` : `https://wa.me/?text=${body}`;
         window.open(base, '_blank');
       } else {
-        // SMS genérico
-        const smsUrl = to ? `sms:${to}?&body=${body}` : `sms:&body=${body}`;
-        window.location.href = smsUrl;
+        window.location.href = to ? `sms:${to}?&body=${body}` : `sms:&body=${body}`;
       }
       break;
     }
     case 'music': {
       const service = (slots.service || 'spotify').toLowerCase();
       const q = encodeURIComponent(slots.query || '');
-      if (service === 'spotify') {
-        // Búsqueda en Spotify
-        window.open(`https://open.spotify.com/search/${q}`, '_blank');
-      } else {
-        // Apple Music búsqueda web
-        window.open(`https://music.apple.com/search?term=${q}`, '_blank');
-      }
+      if (service === 'spotify') window.open(`https://open.spotify.com/search/${q}`, '_blank');
+      else window.open(`https://music.apple.com/search?term=${q}`, '_blank');
       break;
     }
     case 'navigate': {
       const dest = encodeURIComponent(slots.destination || '');
-      if (dest) {
-        // Google Maps
-        window.open(`https://www.google.com/maps/search/?api=1&query=${dest}`, '_blank');
-      }
+      if (dest) window.open(`https://www.google.com/maps/search/?api=1&query=${dest}`, '_blank');
       break;
     }
     case 'smalltalk':
     case 'unknown':
-    default:
-      // nada (ya hablamos por TTS)
-      break;
+    default: break;
   }
 }
+
+/* ---------- Main flow ---------- */
+recog.onresult = async (e) => {
+  const text = e.results[0][0].transcript;
+  youEl.textContent = text;
+  statusEl.textContent = "⏳ Procesando…";
+
+  // Resolver local primero (hora/fecha)
+  if (maybeLocalIntent(text)) return;
+
+  try {
+    const r = await fetch("/api/intent", {
+      method: "POST",
+      headers: { "Content-Type":"application/json" },
+      body: JSON.stringify({ text })
+    });
+    const data = await r.json();
+
+    if (!r.ok || data.error) {
+      assistantEl.textContent = "Hubo un problema.";
+      intentBox.textContent = JSON.stringify(data, null, 2);
+      statusEl.textContent = "⚠️ Error";
+      ttsJarvis("Hubo un problema.");
+      return;
+    }
+
+    intentBox.textContent = JSON.stringify(data, null, 2);
+    const reply = data.reply || "Listo.";
+    assistantEl.textContent = reply;
+    ttsJarvis(reply);
+    routeAction(data.intent, data.slots);
+    statusEl.textContent = "✅ Hecho";
+  } catch (err) {
+    console.error(err);
+    assistantEl.textContent = "Hubo un problema.";
+    statusEl.textContent = "⚠️ Error";
+    ttsJarvis("Hubo un problema.");
+  }
+};
 </script>
 </body>
 </html>
