@@ -8,7 +8,8 @@
 <style>
   :root{
     --bg:#070b14; --bg2:#0a1224; --panel:#0f172a; --line:#1e2a41;
-    --txt:#e6ecff; --muted:#9fb1d8; --neo:#5fd1ff; --neo2:#6af0e7; --warn:#ffd166; --ok:#22c55e; --bad:#ef4444;
+    --txt:#e6ecff; --muted:#9fb1d8; --neo:#5fd1ff; --neo2:#6af0e7;
+    --warn:#ffd166; --ok:#22c55e; --bad:#ef4444;
   }
   *{box-sizing:border-box}
   html,body{height:100%}
@@ -20,25 +21,18 @@
       linear-gradient(180deg, var(--bg) 0%, var(--bg2) 100%);
     font-family: ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial;
   }
-
-  /* Mobile-first vertical layout */
   .wrap{min-height:100%; display:flex; flex-direction:column; padding: max(16px, env(safe-area-inset-top)) 16px 16px}
   header{display:flex; align-items:center; justify-content:space-between}
   .brand{display:flex; align-items:center; gap:10px; font-weight:800; letter-spacing:.3px}
-  .pill{font-size:12px; padding:6px 10px; border:1px solid #22324a; border-radius:999px; color:#cbd5e1; background:#0f1e33}
   .clock{font-variant-numeric:tabular-nums; color:#cfe3ff}
-
-  /* gear (only when not driving) */
   .gear{
     width:32px;height:32px;border-radius:10px; display:grid;place-items:center;
     border:1px solid #1e2a41; color:#90c9ff; background:#0b152a; opacity:.65; cursor:pointer;
-    transition:transform .08s ease, opacity .2s ease, box-shadow .2s ease;
-    box-shadow:0 0 0 0 rgba(95,209,255,.0);
+    transition:transform .08s ease, opacity .2s ease;
   }
   .gear:active{ transform:scale(.96) }
   .gear.hidden{ display:none }
 
-  /* Driving screen */
   .drive{
     display:flex; flex-direction:column; align-items:center; justify-content:center; gap:18px;
     text-align:center; padding:18px 10px; flex:1;
@@ -46,7 +40,6 @@
   .status{ color:var(--muted); font-size:14px }
   .prompt{ font-size: clamp(22px, 6vw, 34px); line-height:1.15; letter-spacing:.2px; color:#dff1ff }
 
-  /* Jarvis widget (tap to talk) */
   .jarvis{ position:relative; width:min(78vw,340px); aspect-ratio:1; display:grid; place-items:center; }
   .j-core{
     position:relative; width:68%; aspect-ratio:1; border-radius:50%;
@@ -69,16 +62,13 @@
   .j-eq{ position:absolute; bottom:-24px; left:50%; transform:translateX(-50%); display:flex; gap:4px }
   .j-bar{ width:6px; height:10px; border-radius:8px; background:linear-gradient(180deg, var(--neo2), var(--neo));
           box-shadow:0 0 12px rgba(95,209,255,.45); transition:height .12s ease; opacity:.85 }
-
   .speaking .j-ring, .speaking .j-pulse{ animation-play-state:running }
   .speaking .j-core{ box-shadow:0 0 58px rgba(106,240,231,.35), inset 0 0 38px rgba(120,160,255,.24) }
   @keyframes rot{ to{ transform:rotate(360deg) } }
   @keyframes pulse{ 0%{box-shadow:0 0 0 0 rgba(106,240,231,.32)} 70%{box-shadow:0 0 0 22px rgba(106,240,231,0)} 100%{box-shadow:0 0 0 0 rgba(106,240,231,0)} }
 
-  /* Footer mini status */
   .foot{ display:flex; justify-content:center; gap:8px; flex-wrap:wrap; margin-top:auto; color:#a9c6ff; font-size:12px }
 
-  /* Settings sheet */
   .sheet{
     position:fixed; left:0; right:0; bottom:-100%; background:linear-gradient(180deg,#0e1731,#0a1224);
     border-top:1px solid #1f2a44; border-radius:18px 18px 0 0; box-shadow:0 -40px 80px #000a;
@@ -95,7 +85,7 @@
 
   .warning{ color:var(--warn) }
   .ok{ color:var(--ok) }
-  .bad{ color:var(--bad) }
+  .bad{ color:#ef4444 }
 </style>
 </head>
 <body>
@@ -108,7 +98,6 @@
       <div class="clock" id="clock">--:--</div>
     </header>
 
-    <!-- Driving screen -->
     <main class="drive">
       <div id="driveStatus" class="status">Drive.AI listo</div>
 
@@ -121,7 +110,7 @@
       </div>
 
       <div id="prompt" class="prompt">¿En qué te ayudo?</div>
-      <div id="mini" class="status">Toque el anillo para hablar</div>
+      <div id="mini" class="status">Tocá el anillo para hablar</div>
     </main>
 
     <div class="foot">
@@ -131,28 +120,27 @@
     </div>
   </div>
 
-  <!-- Settings sheet -->
   <aside id="sheet" class="sheet" aria-modal="true" aria-hidden="true">
     <h2>Configuración</h2>
     <div class="set-list">
       <div class="row"><div class="k">General</div><div class="badge">Modo conducción</div></div>
       <div class="row"><div class="k">Navegación</div><div class="v">Maps/Apple Maps</div></div>
       <div class="row"><div class="k">Clima</div><div class="v">Open-Meteo</div></div>
-      <div class="row"><div class="k">WhatsApp</div><div class="v">Enlaces wa.me</div></div>
+      <div class="row"><div class="k">WhatsApp</div><div class="v">wa.me</div></div>
       <div class="row"><div class="k">Voz</div><div class="v">es-AR</div></div>
       <div class="row"><div class="k">Contactos favoritos</div><div class="badge">Editar</div></div>
     </div>
   </aside>
 
 <script>
-/* ====== Clock ====== */
+/* ===== Reloj ===== */
 function tickClock(){
   const s = new Intl.DateTimeFormat('es-AR',{hour:'2-digit',minute:'2-digit',second:'2-digit'}).format(new Date());
   document.getElementById('clock').textContent = s;
 }
 setInterval(tickClock, 500); tickClock();
 
-/* ====== Jarvis visualizer ====== */
+/* ===== Jarvis visualizer ===== */
 class JarvisViz {
   constructor(root){
     this.root = root; this.eq = document.getElementById('jEq'); this.timer=null; this.bars=[];
@@ -163,7 +151,7 @@ class JarvisViz {
 }
 const jarvis = new JarvisViz(document.getElementById('jarvis'));
 
-/* ====== STT / TTS ====== */
+/* ===== STT / TTS ===== */
 const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 const recog = new Recognition();
 recog.lang = "es-AR";
@@ -178,40 +166,9 @@ function tts(text){
   speechSynthesis.speak(u);
 }
 
-/* Tap ring to talk */
-document.getElementById('jarvis').addEventListener('click', ()=>{
-  recog.start();
-  document.getElementById('driveStatus').textContent = "Escuchando…";
-  jarvis.start();
-});
-
-recog.onresult = async (e)=>{
-  const text = e.results[0][0].transcript;
-  document.getElementById('prompt').textContent = `“${text}”`;
-  document.getElementById('driveStatus').textContent = "Procesando…";
-
-  if (maybeLocal(text)) return;
-
-  try{
-    const r = await fetch("/api/intent", {
-      method:"POST", headers:{ "Content-Type":"application/json" },
-      body: JSON.stringify({ text })
-    });
-    const data = await r.json();
-    const reply = data.reply || "Listo.";
-    document.getElementById('driveStatus').textContent = "Hecho";
-    tts(reply);
-  }catch(err){
-    document.getElementById('driveStatus').textContent = "Error de red";
-    tts("Hubo un problema conectando con la inteligencia artificial.");
-    console.error(err);
-  }
-};
-recog.onend = ()=> { if(!speechSynthesis.speaking) jarvis.stop(); };
-recog.onerror = ()=> { document.getElementById('driveStatus').textContent = "Micrófono no disponible"; };
-
-/* ====== Local intents: hora, clima, ubicación ====== */
+/* ===== Geo + Clima ===== */
 let lastWX = null, lastPlace = null;
+
 async function getLocation(){
   return new Promise((resolve,reject)=>{
     if(!navigator.geolocation) return reject(new Error("Sin geolocalización"));
@@ -239,7 +196,6 @@ async function reverseGeocode(lat, lon){
   const r = await fetch(u); const j = await r.json(); const p = j?.results?.[0];
   return p ? `${p.name}${p.admin1? ', '+p.admin1:''}` : `${lat.toFixed(2)}, ${lon.toFixed(2)}`;
 }
-
 async function refreshWX(){
   try{
     const pos = await getLocation();
@@ -256,73 +212,184 @@ async function refreshWX(){
 }
 refreshWX();
 
-/* Local NLU */
+/* ===== Geocoding por nombre + Clima/Hora por ciudad ===== */
+async function searchCity(name, count = 1) {
+  const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(name)}&count=${count}&language=es&format=json`;
+  const r = await fetch(url);
+  const j = await r.json();
+  if (!j?.results?.length) throw new Error("Ciudad no encontrada");
+  const c = j.results[0];
+  return { name: c.name, country: c.country, lat: c.latitude, lon: c.longitude, timezone: c.timezone };
+}
+async function weatherByCity(cityName) {
+  const c = await searchCity(cityName);
+  const w = await fetchWeather(c.lat, c.lon);
+  return { place: `${c.name}${c.country ? ', ' + c.country : ''}`, temp: w.t, cond: w.cond };
+}
+async function timeInCity(placeName) {
+  const c = await searchCity(placeName);
+  const s = new Intl.DateTimeFormat('es-AR', { hour: '2-digit', minute: '2-digit', timeZone: c.timezone, hour12: false }).format(new Date());
+  return { place: `${c.name}${c.country ? ', ' + c.country : ''}`, time: s };
+}
+
+/* ===== Intents locales (rápidos) ===== */
 function maybeLocal(text){
   const t = (text||'').toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu,'');
-  // hora
+
+  // HORA LOCAL
   if(/(^|\s)(que|qué)?\s*hora(\s*es)?(\s|$)/.test(t)){
     const h = new Intl.DateTimeFormat('es-AR',{hour:'2-digit',minute:'2-digit'}).format(new Date());
     tts(`Son las ${h}.`); document.getElementById('driveStatus').textContent="Hecho"; return true;
   }
-  // clima
+
+  // CLIMA LOCAL
   if(t.includes('clima') || t.includes('temperatura') || t.includes('tiempo')){
-    if(lastWX && lastPlace){
-      tts(`${lastPlace}: ${lastWX.t} grados, ${lastWX.cond}.`);
-    }else{
-      tts("Actualizo el clima."); refreshWX();
+    // si además dice "en/de ..." lo captura el bloque de ciudad más abajo
+    if(!/\b(en|de)\b/.test(t)){
+      if(lastWX && lastPlace){
+        tts(`${lastPlace}: ${lastWX.t} grados, ${lastWX.cond}.`);
+      } else {
+        tts("Actualizo el clima."); refreshWX();
+      }
+      document.getElementById('driveStatus').textContent="Hecho"; return true;
     }
-    document.getElementById('driveStatus').textContent="Hecho"; return true;
   }
-  // ubicacion
-  if(t.includes('donde estoy') || t.includes('dónde estoy') || t.includes('ubicacion') || t.includes('ubicación')){
-    if(lastPlace){ tts(`Estás cerca de ${lastPlace}.`); }
-    else { tts("Necesito tu ubicación."); }
-    document.getElementById('driveStatus').textContent="Hecho"; return true;
+
+  // CLIMA EN OTRA CIUDAD
+  const mWx = t.match(/\b(clima|tiempo|temperatura)\s+(en|de)\s+(.+)$/);
+  if (mWx && mWx[3]) {
+    const city = mWx[3].trim();
+    (async () => {
+      try {
+        const wx = await weatherByCity(city);
+        tts(`${wx.place}: ${wx.temp} grados, ${wx.cond}.`);
+        document.getElementById('driveStatus').textContent = "Hecho";
+      } catch {
+        tts("No encontré esa ciudad.");
+        document.getElementById('driveStatus').textContent = "Ciudad no encontrada";
+      }
+    })();
+    return true;
   }
+
+  // HORA EN OTRA CIUDAD/PAÍS
+  const mTime = t.match(/\b(que|qué)?\s*hora(\s*es)?\s+(en|de)\s+(.+)$/);
+  if (mTime && mTime[4]) {
+    const place = mTime[4].trim();
+    (async () => {
+      try {
+        const res = await timeInCity(place);
+        tts(`En ${res.place} son las ${res.time}.`);
+        document.getElementById('driveStatus').textContent = "Hecho";
+      } catch {
+        tts("No pude obtener la hora en ese lugar.");
+        document.getElementById('driveStatus').textContent = "Lugar no encontrado";
+      }
+    })();
+    return true;
+  }
+
+  // NAVEGAR DIRECTO
+  const mNav = t.match(/\b(navega|navegar|ruta|ir a|llevame a|cómo llego a|como llego a)\b\s+(.+)$/);
+  if (mNav && mNav[2]) {
+    const destino = mNav[2].trim();
+    const apple = `https://maps.apple.com/?q=${encodeURIComponent(destino)}`;
+    const google = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(destino)}`;
+    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    tts(`Trazando ruta a ${destino}`);
+    setTimeout(()=>{ window.location.href = isIOS ? apple : google; }, 400);
+    document.getElementById('driveStatus').textContent = "Hecho";
+    return true;
+  }
+
   return false;
 }
 
-/* ====== Driving Mode, Gear visibility & Wake Lock ====== */
-let driving = false, wakeLock=null;
+/* ===== Flujo principal: Local -> Chat (Q&A) -> Intent parser ===== */
+document.getElementById('jarvis').addEventListener('click', ()=>{
+  recog.start();
+  document.getElementById('driveStatus').textContent = "Escuchando…";
+  jarvis.start();
+});
 
+recog.onresult = async (e)=>{
+  const text = e.results[0][0].transcript.trim();
+  document.getElementById('prompt').textContent = `“${text}”`;
+  document.getElementById('driveStatus').textContent = "Procesando…";
+
+  // 1) Local
+  if (maybeLocal(text)) return;
+
+  // 2) Heurística QA → Chat (Asistente personal)
+  const q = text.toLowerCase();
+  const looksLikeQA =
+    /(\?|qué|que|como|cómo|por qué|porque|explicame|defin[ií]|resum[ií]|precio|cu[aá]nto|d[óo]nde|hora en|clima en|nafta|d[oó]lar|tr[aá]fico|noticias)/.test(q);
+
+  try{
+    if (looksLikeQA) {
+      const r = await fetch("/api/chat", {
+        method:"POST", headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify({ text })
+      });
+      const data = await r.json();
+      const reply = data.reply || "Listo.";
+      document.getElementById('driveStatus').textContent = "Hecho";
+      tts(reply);
+    } else {
+      const r = await fetch("/api/intent", {
+        method:"POST", headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify({ text })
+      });
+      const data = await r.json();
+      const reply = data.reply || "Listo.";
+      document.getElementById('driveStatus').textContent = "Hecho";
+      tts(reply);
+      if (/clima|tiempo|temperatura/i.test(text)) refreshWX();
+    }
+  }catch(err){
+    console.error(err);
+    document.getElementById('driveStatus').textContent = "Error de red";
+    tts("Hubo un problema conectando con la inteligencia artificial.");
+  }
+};
+recog.onend   = ()=> { if(!speechSynthesis.speaking) jarvis.stop(); };
+recog.onerror = ()=> { document.getElementById('driveStatus').textContent = "Micrófono no disponible"; };
+
+/* ===== Modo conducción + WakeLock ===== */
+let driving=false, wakeLock=null;
 function setDriving(on){
   driving = !!on;
-  // engranaje visible solo si NO conduces
   document.getElementById('gearBtn').classList.toggle('hidden', driving);
-  document.getElementById('mini').textContent = driving ? "Modo conducción activado" : "Toque el anillo para hablar";
+  document.getElementById('mini').textContent = driving ? "Modo conducción activado" : "Tocá el anillo para hablar";
   if(driving) requestWakeLock(); else releaseWakeLock();
 }
 function autoDriving(speed){
   if(typeof speed === 'number' && speed !== null){
-    // speed en m/s ~7.0 ≈ 25 km/h
-    if(speed > 7 && !driving) setDriving(true);
+    if(speed > 7 && !driving) setDriving(true);    // ~25 km/h
     if(speed <= 2 && driving) setDriving(false);
   }
 }
-async function requestWakeLock(){
-  try{ if('wakeLock' in navigator){ wakeLock = await navigator.wakeLock.request('screen'); } }catch{}
-}
+async function requestWakeLock(){ try{ if('wakeLock' in navigator){ wakeLock = await navigator.wakeLock.request('screen'); } }catch{} }
 function releaseWakeLock(){ try{ wakeLock && wakeLock.release(); wakeLock=null; }catch{} }
 document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible' && driving) requestWakeLock(); });
 
-/* ====== Settings sheet open/close ====== */
+/* ===== Sheet de configuración ===== */
 const sheet = document.getElementById('sheet');
 function openSheet(){ if(driving) return; sheet.classList.add('show'); sheet.setAttribute('aria-hidden','false'); }
 function closeSheet(){ sheet.classList.remove('show'); sheet.setAttribute('aria-hidden','true'); }
 document.getElementById('gearBtn').addEventListener('click', openSheet);
-// cerrar por swipe-down / tap fuera
 let startY=null;
 sheet.addEventListener('touchstart',e=> startY=e.touches[0].clientY);
 sheet.addEventListener('touchmove',e=>{ if(startY && e.touches[0].clientY - startY > 40) closeSheet(); });
 sheet.addEventListener('click', e=>{ if(e.target===sheet) closeSheet(); });
 
-/* ====== Network indicator ====== */
+/* ===== Indicador de red ===== */
 function net(){
-  document.getElementById('net').className = navigator.onLine ? 'ok' : 'bad';
-  document.getElementById('net').textContent = navigator.onLine ? '● Conectado' : '● Sin conexión';
+  const el = document.getElementById('net');
+  el.className = navigator.onLine ? 'ok' : 'bad';
+  el.textContent = navigator.onLine ? '● Conectado' : '● Sin conexión';
 }
 window.addEventListener('online', net); window.addEventListener('offline', net); net();
-
 </script>
 </body>
 </html>
