@@ -133,6 +133,9 @@
   </aside>
 
 <script>
+/* ===== Config API base (mismo dominio → ''). Si backend está aparte, poné la URL completa. ===== */
+const API = ''; // ej: 'https://smartdrive-backend.onrender.com'
+
 /* ===== Reloj ===== */
 function tickClock(){
   const s = new Intl.DateTimeFormat('es-AR',{hour:'2-digit',minute:'2-digit',second:'2-digit'}).format(new Date());
@@ -166,7 +169,7 @@ function tts(text){
   speechSynthesis.speak(u);
 }
 
-/* ===== Geo + Clima ===== */
+/* ===== Geo + Clima (vía BACKEND para evitar CORS) ===== */
 let lastWX = null, lastPlace = null;
 
 async function getLocation(){
@@ -179,23 +182,20 @@ async function getLocation(){
     );
   });
 }
+
 async function fetchWeather(lat, lon){
-  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&timezone=auto`;
-  const r = await fetch(url); const j = await r.json(); const cw=j?.current_weather;
-  let cond="Despejado", code=cw?.weathercode;
-  if([1,2,3].includes(code)) cond="Parcialmente nublado";
-  if([45,48].includes(code)) cond="Niebla";
-  if([51,53,55,56,57].includes(code)) cond="Llovizna";
-  if([61,63,65,66,67,80,81,82].includes(code)) cond="Lluvia";
-  if([71,73,75,77,85,86].includes(code)) cond="Nieve";
-  if([95,96,99].includes(code)) cond="Tormenta";
-  return { t: Math.round(cw?.temperature ?? 0), cond };
+  const r = await fetch(`${API}/api/weather?lat=${lat}&lon=${lon}`);
+  if (!r.ok) throw new Error('weather error');
+  return await r.json(); // { t, cond }
 }
+
 async function reverseGeocode(lat, lon){
-  const u = `https://geocoding-api.open-meteo.com/v1/reverse?latitude=${lat}&longitude=${lon}&language=es`;
-  const r = await fetch(u); const j = await r.json(); const p = j?.results?.[0];
-  return p ? `${p.name}${p.admin1? ', '+p.admin1:''}` : `${lat.toFixed(2)}, ${lon.toFixed(2)}`;
+  const r = await fetch(`${API}/api/revgeo?lat=${lat}&lon=${lon}`);
+  if (!r.ok) throw new Error('revgeo error');
+  const j = await r.json();
+  return j.label;
 }
+
 async function refreshWX(){
   try{
     const pos = await getLocation();
@@ -212,24 +212,23 @@ async function refreshWX(){
 }
 refreshWX();
 
-/* ===== Geocoding por nombre + Clima/Hora por ciudad ===== */
-async function searchCity(name, count = 1) {
-  const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(name)}&count=${count}&language=es&format=json`;
-  const r = await fetch(url);
-  const j = await r.json();
-  if (!j?.results?.length) throw new Error("Ciudad no encontrada");
-  const c = j.results[0];
-  return { name: c.name, country: c.country, lat: c.latitude, lon: c.longitude, timezone: c.timezone };
+/* ===== Geocoding por nombre + Clima/Hora por ciudad (vía BACKEND) ===== */
+async function searchCity(name) {
+  const r = await fetch(`${API}/api/geo?name=${encodeURIComponent(name)}`);
+  if (!r.ok) throw new Error("Ciudad no encontrada");
+  return await r.json(); // { name, country, lat, lon, timezone }
 }
 async function weatherByCity(cityName) {
   const c = await searchCity(cityName);
-  const w = await fetchWeather(c.lat, c.lon);
+  const r = await fetch(`${API}/api/weather?lat=${c.lat}&lon=${c.lon}`);
+  if (!r.ok) throw new Error('Weather error');
+  const w = await r.json();
   return { place: `${c.name}${c.country ? ', ' + c.country : ''}`, temp: w.t, cond: w.cond };
 }
 async function timeInCity(placeName) {
-  const c = await searchCity(placeName);
-  const s = new Intl.DateTimeFormat('es-AR', { hour: '2-digit', minute: '2-digit', timeZone: c.timezone, hour12: false }).format(new Date());
-  return { place: `${c.name}${c.country ? ', ' + c.country : ''}`, time: s };
+  const r = await fetch(`${API}/api/time?place=${encodeURIComponent(placeName)}`);
+  if (!r.ok) throw new Error('Time error');
+  return await r.json(); // { place, time, tz }
 }
 
 /* ===== Intents locales (rápidos) ===== */
@@ -244,7 +243,6 @@ function maybeLocal(text){
 
   // CLIMA LOCAL
   if(t.includes('clima') || t.includes('temperatura') || t.includes('tiempo')){
-    // si además dice "en/de ..." lo captura el bloque de ciudad más abajo
     if(!/\b(en|de)\b/.test(t)){
       if(lastWX && lastPlace){
         tts(`${lastPlace}: ${lastWX.t} grados, ${lastWX.cond}.`);
@@ -305,7 +303,7 @@ function maybeLocal(text){
   return false;
 }
 
-/* ===== Flujo principal: Local -> Chat (Q&A) -> Intent parser ===== */
+/* ===== Flujo principal ===== */
 document.getElementById('jarvis').addEventListener('click', ()=>{
   recog.start();
   document.getElementById('driveStatus').textContent = "Escuchando…";
@@ -320,14 +318,14 @@ recog.onresult = async (e)=>{
   // 1) Local
   if (maybeLocal(text)) return;
 
-  // 2) Heurística QA → Chat (Asistente personal)
+  // 2) QA general → /api/chat
   const q = text.toLowerCase();
   const looksLikeQA =
     /(\?|qué|que|como|cómo|por qué|porque|explicame|defin[ií]|resum[ií]|precio|cu[aá]nto|d[óo]nde|hora en|clima en|nafta|d[oó]lar|tr[aá]fico|noticias)/.test(q);
 
   try{
     if (looksLikeQA) {
-      const r = await fetch("/api/chat", {
+      const r = await fetch(`${API}/api/chat`, {
         method:"POST", headers:{ "Content-Type":"application/json" },
         body: JSON.stringify({ text })
       });
@@ -336,7 +334,7 @@ recog.onresult = async (e)=>{
       document.getElementById('driveStatus').textContent = "Hecho";
       tts(reply);
     } else {
-      const r = await fetch("/api/intent", {
+      const r = await fetch(`${API}/api/intent`, {
         method:"POST", headers:{ "Content-Type":"application/json" },
         body: JSON.stringify({ text })
       });
