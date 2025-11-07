@@ -1,4 +1,4 @@
-// server.js (reemplazo completo)
+// server.js
 import 'dotenv/config';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -19,9 +19,8 @@ const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const OPENAI_MODEL   = process.env.OPENAI_MODEL || 'gpt-5';
 
 /* =========================================================
-   Helpers de TOOLS (clima, hora, calc)
+   TOOLS (para /api/chat con Responses API)
    ========================================================= */
-// Geocoding por ciudad (Open-Meteo: gratis, sin key)
 async function geoCity(name) {
   const r = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(name)}&count=1&language=es&format=json`);
   const j = await r.json();
@@ -29,7 +28,6 @@ async function geoCity(name) {
   const c = j.results[0];
   return { name: c.name, country: c.country, lat: c.latitude, lon: c.longitude, timezone: c.timezone };
 }
-// Clima (Open-Meteo)
 async function getWeatherByCoords(lat, lon) {
   const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code,wind_speed_10m&timezone=auto`;
   const r = await fetch(url); const j = await r.json();
@@ -51,7 +49,6 @@ async function tool_getWeather({ city }) {
   return { place: `${c.name}${c.country ? ', '+c.country : ''}`, tempC: w.t, condition: w.cond, source: 'open-meteo.com' };
 }
 async function tool_getTime({ placeOrTz }) {
-  // Intento por ciudad primero; si falla, uso el valor como TZ.
   try {
     const c = await geoCity(placeOrTz);
     const s = new Intl.DateTimeFormat('es-AR', { hour:'2-digit', minute:'2-digit', timeZone: c.timezone, hour12:false }).format(new Date());
@@ -71,7 +68,7 @@ function tool_calc({ expression }) {
 }
 
 /* =========================================================
-   Parser de Intents (lo mantenemos igual)
+   INTENT PARSER (se mantiene)
    ========================================================= */
 const SYSTEM_PROMPT = `
 Eres un parser de comandos de voz para auto. Devuelves SOLO JSON válido.
@@ -87,37 +84,30 @@ Reglas:
 - Si la orden no aplica conduciendo, responde "unknown".
 - Nunca incluyas comentarios, SOLO JSON. Idioma: español.
 `;
-async function gptParse(text) {
-  const resp = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${OPENAI_API_KEY}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      model: OPENAI_MODEL,
-      temperature: 0.2,
-      response_format: { type: "json_object" },
-      messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
-        { role: 'user', content: text }
-      ]
-    })
-  });
-  if (!resp.ok) {
-    const errText = await resp.text().catch(()=> '');
-    throw new Error(`OpenAI error ${resp.status}: ${errText}`);
-  }
-  const data = await resp.json();
-  const content = data?.choices?.[0]?.message?.content?.trim() || '{}';
-  try { return JSON.parse(content); }
-  catch { return { intent: 'unknown', slots: {}, reply: 'No entendí bien.' }; }
-}
 app.post('/api/intent', async (req, res) => {
   try {
     const { text } = req.body || {};
     if (!text) return res.status(400).json({ error: 'Missing text' });
-    const parsed = await gptParse(text);
+    const resp = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: OPENAI_MODEL,
+        temperature: 0.2,
+        response_format: { type: "json_object" },
+        messages: [
+          { role: 'system', content: SYSTEM_PROMPT },
+          { role: 'user', content: text }
+        ]
+      })
+    });
+    if (!resp.ok) throw new Error(await resp.text());
+    const data = await resp.json();
+    const content = data?.choices?.[0]?.message?.content?.trim() || '{}';
+    const parsed = JSON.parse(content);
     res.json({ intent: parsed.intent ?? 'unknown', slots: parsed.slots ?? {}, reply: parsed.reply ?? 'Listo.' });
   } catch (e) {
     console.error(e);
@@ -126,54 +116,31 @@ app.post('/api/intent', async (req, res) => {
 });
 
 /* =========================================================
-   Chat Q&A con TOOLS (✨ ahora responde de todo)
+   CHAT con Responses API + TOOLS (responde de todo)
    ========================================================= */
 const ASSISTANT_SYSTEM = `
 Eres SmartDrive, asistente de voz para conducción y vida diaria.
-- Responde breve (máx. 2 oraciones) y en español rioplatense neutro.
-- Usá tools para datos en tiempo real (clima, hora, cálculo, búsqueda si hace falta).
-- Si una tool falla, devolvé igual una respuesta útil y ofrecé alternativa.
-- Evitá URLs y listas largas. Sé claro y directo.
+- Responde breve (máx. 2 oraciones) en español rioplatense neutro.
+- Usá tools para datos en tiempo real (clima, hora, cálculo).
+- Si una tool falla, devolvé igual una respuesta útil.
+- Evitá URLs y listas largas.
 `;
-
 const toolsSpec = [
-  {
-    type: 'function',
-    function: {
+  { type: 'function', function: {
       name: 'getWeather',
       description: 'Clima actual en una ciudad',
-      parameters: {
-        type: 'object',
-        properties: { city: { type: 'string', description: 'Nombre de la ciudad en cualquier idioma' } },
-        required: ['city']
-      }
-    }
-  },
-  {
-    type: 'function',
-    function: {
+      parameters: { type:'object', properties:{ city:{ type:'string' } }, required:['city'] }
+  }},
+  { type: 'function', function: {
       name: 'getTime',
       description: 'Hora local para una ciudad o zona horaria',
-      parameters: {
-        type: 'object',
-        properties: { placeOrTz: { type: 'string', description: 'Ej. "Madrid" o "Europe/Madrid"' } },
-        required: ['placeOrTz']
-      }
-    }
-  },
-  {
-    type: 'function',
-    function: {
+      parameters: { type:'object', properties:{ placeOrTz:{ type:'string' } }, required:['placeOrTz'] }
+  }},
+  { type: 'function', function: {
       name: 'calc',
-      description: 'Calculadora aritmética básica (+ - * /, paréntesis)',
-      parameters: {
-        type: 'object',
-        properties: { expression: { type: 'string', description: 'Ej. (2+3)*4/5' } },
-        required: ['expression']
-      }
-    }
-  }
-  // Si luego querés, podés agregar { type: 'web_search' } si tu backend/proveedor lo soporta.
+      description: 'Calculadora aritmética básica',
+      parameters: { type:'object', properties:{ expression:{ type:'string' } }, required:['expression'] }
+  }},
 ];
 
 async function callOpenAI(payload) {
@@ -182,10 +149,7 @@ async function callOpenAI(payload) {
     headers: { 'Authorization': `Bearer ${OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
     body: JSON.stringify(payload)
   });
-  if (!r.ok) {
-    const errText = await r.text().catch(()=> '');
-    throw new Error(`OpenAI error ${r.status}: ${errText}`);
-  }
+  if (!r.ok) throw new Error(await r.text());
   return r.json();
 }
 
@@ -194,7 +158,6 @@ app.post('/api/chat', async (req, res) => {
     const { text } = req.body || {};
     if (!text) return res.status(400).json({ error: 'Missing text' });
 
-    // 1) Primer turno con tools habilitadas
     let data = await callOpenAI({
       model: OPENAI_MODEL,
       input: [
@@ -206,7 +169,7 @@ app.post('/api/chat', async (req, res) => {
       temperature: 0.4
     });
 
-    // 2) Si el modelo pidió tools, resolvemos acá (hasta 2 rondas)
+    // Resolver tool calls (hasta 2 rondas)
     for (let i = 0; i < 2; i++) {
       const toolCalls = (data.output || []).filter(o => o.type === 'tool_call');
       if (!toolCalls.length) break;
@@ -253,6 +216,85 @@ app.post('/api/chat', async (req, res) => {
   } catch (e) {
     console.error(e);
     res.status(500).json({ reply: 'No pude responder ahora.' });
+  }
+});
+
+/* =========================================================
+   PROXIES anti-CORS para el frontend (geo, revgeo, clima, hora)
+   ========================================================= */
+
+// /api/geo?name=Tokyo
+app.get('/api/geo', async (req, res) => {
+  try {
+    const name = (req.query.name || '').toString();
+    if (!name) return res.status(400).json({ error: 'Missing name' });
+    const r = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(name)}&count=1&language=es&format=json`);
+    const j = await r.json();
+    if (!j?.results?.length) return res.status(404).json({ error: 'Ciudad no encontrada' });
+    const c = j.results[0];
+    res.json({ name: c.name, country: c.country, lat: c.latitude, lon: c.longitude, timezone: c.timezone });
+  } catch (e) {
+    console.error(e); res.status(500).json({ error: 'geo failed' });
+  }
+});
+
+// /api/revgeo?lat=-34.6&lon=-58.4
+app.get('/api/revgeo', async (req, res) => {
+  try {
+    const lat = Number(req.query.lat), lon = Number(req.query.lon);
+    if (!isFinite(lat) || !isFinite(lon)) return res.status(400).json({ error: 'Missing lat/lon' });
+    const u = `https://geocoding-api.open-meteo.com/v1/reverse?latitude=${lat}&longitude=${lon}&language=es`;
+    const r = await fetch(u); const j = await r.json(); const p = j?.results?.[0];
+    const label = p ? `${p.name}${p.admin1? ', '+p.admin1:''}` : `${lat.toFixed(2)}, ${lon.toFixed(2)}`;
+    res.json({ label });
+  } catch (e) {
+    console.error(e); res.status(500).json({ error: 'revgeo failed' });
+  }
+});
+
+// /api/weather?lat=-34.6&lon=-58.4
+app.get('/api/weather', async (req, res) => {
+  try {
+    const lat = Number(req.query.lat), lon = Number(req.query.lon);
+    if (!isFinite(lat) || !isFinite(lon)) return res.status(400).json({ error: 'Missing lat/lon' });
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&timezone=auto`;
+    const r = await fetch(url); const j = await r.json();
+    const cw = j?.current_weather || j?.current || {};
+    const code = cw.weathercode ?? cw.weather_code;
+    let cond = 'Despejado';
+    if([1,2,3].includes(code)) cond='Parcialmente nublado';
+    if([45,48].includes(code)) cond='Niebla';
+    if([51,53,55,56,57].includes(code)) cond='Llovizna';
+    if([61,63,65,66,67,80,81,82].includes(code)) cond='Lluvia';
+    if([71,73,75,77,85,86].includes(code)) cond='Nieve';
+    if([95,96,99].includes(code)) cond='Tormenta';
+    res.json({ t: Math.round(cw.temperature ?? cw.temperature_2m ?? 0), cond });
+  } catch (e) {
+    console.error(e); res.status(500).json({ error: 'weather failed' });
+  }
+});
+
+// /api/time?place=Tokyo   ó   /api/time?tz=Asia/Tokyo
+app.get('/api/time', async (req, res) => {
+  try {
+    const place = (req.query.place || '').toString();
+    const tzReq = (req.query.tz || '').toString();
+    let tz = tzReq;
+    let label = tzReq;
+
+    if (place) {
+      const r = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(place)}&count=1&language=es&format=json`);
+      const j = await r.json();
+      if (j?.results?.length) {
+        const c = j.results[0];
+        tz = c.timezone; label = `${c.name}${c.country ? ', '+c.country : ''}`;
+      }
+    }
+    if (!tz) tz = 'UTC';
+    const s = new Intl.DateTimeFormat('es-AR', { hour: '2-digit', minute: '2-digit', timeZone: tz, hour12: false }).format(new Date());
+    res.json({ place: label || tz, time: s, tz });
+  } catch (e) {
+    console.error(e); res.status(500).json({ error: 'time failed' });
   }
 });
 
