@@ -21,10 +21,10 @@ export default async function chatHandler(req, res) {
       model: "gpt-4.1-mini", // o el modelo que quieras usar
       messages: [
         {
-          role: "system",
-          content:
-            "Sos SmartDrive, un asistente de voz para conductores. Podés responder literalmente cualquier pregunta (no solo de autos) de forma clara, breve y segura. Si la pregunta tiene que ver con manejo, viajes o rutas, tratá de relacionar la respuesta con la conducción responsable.",
-        },
+  role: "system",
+  content:
+    "Sos SmartDrive, un asistente de inteligencia artificial que responde cualquier pregunta de forma clara, directa y sencilla. Respondé en español neutro. No estás obligado a mencionar autos, manejo ni seguridad vial, salvo que la pregunta sea específicamente sobre esos temas.",
+},
         { role: "user", content: userMessage },
       ],
     });
