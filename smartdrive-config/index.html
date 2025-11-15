@@ -1,0 +1,1434 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>SmartDrive Companion</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    :root {
+      --bg: #050814;
+      --bg-soft: #090f1c;
+      --panel: rgba(12, 18, 40, 0.9);
+      --accent: #3ac2ff;
+      --accent-soft: rgba(58, 194, 255, 0.3);
+      --accent-strong: #35e3ff;
+      --danger: #ff5c7a;
+      --text: #f4f7ff;
+      --muted: #9aa3c2;
+      --border: rgba(255, 255, 255, 0.08);
+      --radius-lg: 22px;
+      --radius-md: 16px;
+      --radius-sm: 10px;
+      --shadow-soft: 0 18px 40px rgba(0, 0, 0, 0.65);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+        "Inter", "Roboto", sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at top, #1b2650 0, transparent 55%),
+        radial-gradient(circle at bottom, #0a1124 0, #050814 60%);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+    }
+
+    .app-shell {
+      width: 100%;
+      max-width: 460px;
+      min-height: 100vh;
+      padding: 18px 16px 70px;
+      position: relative;
+    }
+
+    .phone-frame {
+      background: linear-gradient(135deg, #050814 0, #050814 40%, #101735 100%);
+      border-radius: 30px;
+      padding: 14px;
+      box-shadow: 0 35px 80px rgba(0, 0, 0, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      min-height: calc(100vh - 80px);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .phone-inner {
+      border-radius: 22px;
+      background: radial-gradient(circle at top, #151d3b 0, #050814 55%);
+      padding: 16px 16px 60px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .phone-inner::before {
+      content: "";
+      position: absolute;
+      inset: -40%;
+      background:
+        radial-gradient(circle at 15% 0, rgba(58, 194, 255, 0.28), transparent 50%),
+        radial-gradient(circle at 80% 100%, rgba(123, 97, 255, 0.2), transparent 55%);
+      opacity: 0.8;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .content {
+      position: relative;
+      z-index: 1;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Header (cambia solo en dashboard) */
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo-ring {
+      width: 40px;
+      height: 40px;
+      border-radius: 999px;
+      border: 1px solid var(--accent-soft);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 0 16px rgba(58, 194, 255, 0.5);
+    }
+
+    .logo-ring::after {
+      content: "";
+      position: absolute;
+      width: 130%;
+      height: 130%;
+      background: conic-gradient(
+        from 0deg,
+        rgba(58, 194, 255, 0.04),
+        rgba(58, 194, 255, 0.8),
+        rgba(58, 194, 255, 0.04)
+      );
+      animation: spin 5.5s linear infinite;
+      opacity: 0.9;
+    }
+
+    .logo-core {
+      width: 22px;
+      height: 22px;
+      border-radius: 999px;
+      background: radial-gradient(circle at 25% 15%, #ffffff 0, #3ac2ff 40%, #0b1020 90%);
+      position: relative;
+      z-index: 1;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .brand-text {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .brand-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .brand-subtitle {
+      font-size: 0.72rem;
+      color: var(--muted);
+    }
+
+    .status-pill {
+      font-size: 0.7rem;
+      border-radius: 999px;
+      padding: 4px 10px;
+      background: rgba(3, 168, 123, 0.09);
+      border: 1px solid rgba(3, 168, 123, 0.5);
+      color: #4be3a5;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: #4be3a5;
+      box-shadow: 0 0 8px rgba(75, 227, 165, 0.8);
+    }
+
+    /* Layout pantallas */
+    .screen {
+      display: none;
+      flex: 1;
+      flex-direction: column;
+      gap: 16px;
+      animation: fade-in 0.18s ease-out;
+    }
+
+    .screen.active {
+      display: flex;
+    }
+
+    @keyframes fade-in {
+      from {
+        opacity: 0;
+        transform: translateY(6px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .hero {
+      margin-top: 6px;
+      margin-bottom: 6px;
+    }
+
+    .hero-title {
+      font-size: 1.4rem;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+      margin-bottom: 4px;
+    }
+
+    .hero-subtitle {
+      font-size: 0.9rem;
+      color: var(--muted);
+      max-width: 300px;
+    }
+
+    .hero-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.75rem;
+      color: var(--accent-strong);
+      background: rgba(26, 34, 70, 0.9);
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(58, 194, 255, 0.4);
+      margin-bottom: 10px;
+    }
+
+    .hero-tag-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 999px;
+      background: var(--accent-strong);
+      box-shadow: 0 0 8px rgba(53, 227, 255, 0.9);
+    }
+
+    .hero-illustration {
+      margin-top: 14px;
+      border-radius: var(--radius-lg);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      background: radial-gradient(circle at 15% 15%, #263a88 0, transparent 55%),
+        radial-gradient(circle at 80% 80%, #0b9bd2 0, transparent 55%),
+        rgba(5, 8, 20, 0.9);
+      padding: 14px;
+      box-shadow: var(--shadow-soft);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .car-icon {
+      width: 70px;
+      height: 52px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, #151f3b 0, #0c162e 30%, #37caff 100%);
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 0 18px rgba(58, 194, 255, 0.7);
+    }
+
+    .car-icon::after {
+      content: "";
+      position: absolute;
+      inset: 20% -30%;
+      background: radial-gradient(circle at 10% 20%, #ffffff 0, transparent 40%);
+      opacity: 0.7;
+    }
+
+    .car-road {
+      position: absolute;
+      inset: auto 0 8px;
+      height: 10px;
+      background: linear-gradient(90deg, rgba(0, 0, 0, 0.6) 0, rgba(0, 0, 0, 0.1) 40%, rgba(0, 0, 0, 0.6) 100%);
+    }
+
+    .car-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 999px;
+      background: #ffffff;
+      position: absolute;
+      left: 8px;
+      bottom: 13px;
+      box-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
+    }
+
+    .car-dot::after {
+      content: "";
+      position: absolute;
+      inset: 1px;
+      border-radius: inherit;
+      background: #050814;
+    }
+
+    .hero-text-block {
+      flex: 1;
+    }
+
+    .hero-text-main {
+      font-size: 0.9rem;
+      margin-bottom: 4px;
+    }
+
+    .hero-text-sub {
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    /* Cards */
+    .card {
+      background: linear-gradient(145deg, rgba(13, 19, 44, 0.95), rgba(7, 11, 26, 0.95));
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      padding: 12px 12px 12px;
+      box-shadow: 0 14px 28px rgba(0, 0, 0, 0.55);
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+
+    .card-title {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: var(--muted);
+    }
+
+    .card-badge {
+      font-size: 0.7rem;
+      padding: 3px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(58, 194, 255, 0.55);
+      color: var(--accent);
+      background: rgba(9, 19, 40, 0.9);
+    }
+
+    .card-content {
+      font-size: 0.9rem;
+    }
+
+    .card-subtext {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    /* Botones */
+    .btn {
+      border: none;
+      border-radius: 999px;
+      padding: 10px 16px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: all 0.12s ease-out;
+      white-space: nowrap;
+    }
+
+    .btn-primary {
+      background: radial-gradient(circle at 20% 0, #ffffff 0, #3ac2ff 35%, #005b8e 100%);
+      color: #020710;
+      box-shadow:
+        0 0 24px rgba(58, 194, 255, 0.85),
+        0 0 0 1px rgba(255, 255, 255, 0.2);
+      width: 100%;
+      margin-top: 4px;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow:
+        0 0 28px rgba(58, 194, 255, 1),
+        0 0 0 1px rgba(255, 255, 255, 0.24);
+    }
+
+    .btn-primary:active {
+      transform: translateY(0);
+      box-shadow:
+        0 0 18px rgba(58, 194, 255, 0.8),
+        0 0 0 1px rgba(255, 255, 255, 0.24);
+    }
+
+    .btn-ghost {
+      background: rgba(10, 16, 35, 0.85);
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: var(--muted);
+    }
+
+    .btn-ghost.small {
+      padding: 6px 10px;
+      font-size: 0.8rem;
+    }
+
+    .btn-ghost:hover {
+      border-color: rgba(255, 255, 255, 0.16);
+      color: var(--text);
+      background: rgba(13, 20, 46, 0.95);
+    }
+
+    /* Lista emparejar */
+    .device-list {
+      margin-top: 4px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 150px;
+      overflow-y: auto;
+    }
+
+    .device-item {
+      padding: 10px 10px;
+      border-radius: 14px;
+      background: rgba(10, 16, 36, 0.95);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      cursor: pointer;
+      transition: all 0.12s ease-out;
+    }
+
+    .device-item:hover {
+      border-color: var(--accent-soft);
+      background: rgba(14, 24, 52, 0.98);
+    }
+
+    .device-main {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      font-size: 0.85rem;
+    }
+
+    .device-name {
+      font-weight: 500;
+    }
+
+    .device-meta {
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+
+    .device-status {
+      font-size: 0.72rem;
+      border-radius: 999px;
+      padding: 4px 8px;
+      background: rgba(58, 194, 255, 0.1);
+      color: var(--accent);
+      border: 1px solid rgba(58, 194, 255, 0.4);
+      white-space: nowrap;
+    }
+
+    /* Inputs */
+    .form-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-size: 0.8rem;
+    }
+
+    .field-label {
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.13em;
+      font-size: 0.7rem;
+    }
+
+    .field-control {
+      border-radius: 14px;
+      background: rgba(8, 14, 32, 0.96);
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      padding: 8px 10px;
+      color: var(--text);
+      font-size: 0.88rem;
+      outline: none;
+      width: 100%;
+    }
+
+    .field-control:focus {
+      border-color: var(--accent-soft);
+      box-shadow: 0 0 0 1px rgba(58, 194, 255, 0.3);
+    }
+
+    select.field-control {
+      background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%),
+        linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+      background-position:
+        calc(100% - 14px) 11px,
+        calc(100% - 9px) 11px;
+      background-size: 5px 5px, 5px 5px;
+      background-repeat: no-repeat;
+      appearance: none;
+    }
+
+    .chips-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 4px;
+    }
+
+    .chip-option {
+      font-size: 0.8rem;
+      border-radius: 999px;
+      padding: 5px 10px;
+      background: rgba(9, 16, 36, 0.9);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 0.12s ease-out;
+    }
+
+    .chip-option.selected {
+      border-color: rgba(58, 194, 255, 0.7);
+      color: var(--accent-strong);
+      background: rgba(15, 26, 54, 0.98);
+      box-shadow: 0 0 16px rgba(58, 194, 255, 0.45);
+    }
+
+    .slider {
+      width: 100%;
+      accent-color: var(--accent);
+    }
+
+    .slider-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    .slider-value {
+      font-size: 0.85rem;
+      color: var(--accent-strong);
+      min-width: 30px;
+      text-align: right;
+    }
+
+    /* Dashboard tarjetas */
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+
+    .pill-row {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-top: 6px;
+    }
+
+    .pill {
+      font-size: 0.7rem;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: rgba(10, 16, 36, 0.9);
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      color: var(--muted);
+    }
+
+    .pill.accent {
+      border-color: rgba(58, 194, 255, 0.6);
+      color: var(--accent-strong);
+    }
+
+    /* Mini toggle */
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-top: 6px;
+      font-size: 0.82rem;
+    }
+
+    .toggle-switch {
+      width: 40px;
+      height: 22px;
+      border-radius: 999px;
+      background: rgba(9, 14, 30, 0.95);
+      border: 1px solid rgba(255, 255, 255, 0.13);
+      padding: 2px;
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      transition: all 0.15s ease-out;
+    }
+
+    .toggle-knob {
+      width: 16px;
+      height: 16px;
+      border-radius: 999px;
+      background: rgba(169, 177, 210, 0.9);
+      box-shadow: 0 0 8px rgba(0, 0, 0, 0.6);
+      transition: all 0.15s ease-out;
+      transform: translateX(0);
+    }
+
+    .toggle-switch.on {
+      background: rgba(53, 227, 255, 0.14);
+      border-color: rgba(53, 227, 255, 0.65);
+    }
+
+    .toggle-switch.on .toggle-knob {
+      background: var(--accent-strong);
+      transform: translateX(16px);
+      box-shadow: 0 0 10px rgba(53, 227, 255, 0.9);
+    }
+
+    /* Bottom nav */
+    .bottom-nav {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: 20px;
+      width: 92%;
+      max-width: 420px;
+      height: 48px;
+      border-radius: 999px;
+      background: rgba(4, 7, 20, 0.96);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      backdrop-filter: blur(18px);
+      box-shadow: 0 18px 38px rgba(0, 0, 0, 0.85);
+      z-index: 10;
+    }
+
+    .nav-item {
+      flex: 1;
+      text-align: center;
+      font-size: 0.7rem;
+      color: var(--muted);
+      cursor: pointer;
+      position: relative;
+      padding-top: 3px;
+    }
+
+    .nav-icon {
+      font-size: 1rem;
+      display: block;
+      margin-bottom: 2px;
+    }
+
+    .nav-item.active {
+      color: var(--accent-strong);
+    }
+
+    .nav-pill {
+      position: absolute;
+      width: 24px;
+      height: 3px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #3ac2ff, #7b61ff);
+      bottom: 3px;
+      left: 50%;
+      transform: translateX(-50%);
+      opacity: 0;
+      transition: opacity 0.12s ease-out;
+    }
+
+    .nav-item.active .nav-pill {
+      opacity: 1;
+    }
+
+    /* Enlaces secundarios */
+    .secondary-link {
+      margin-top: 10px;
+      font-size: 0.8rem;
+      text-align: center;
+      color: var(--muted);
+    }
+
+    .secondary-link button {
+      background: none;
+      border: none;
+      color: var(--accent-strong);
+      cursor: pointer;
+      font: inherit;
+    }
+
+    /* Chat modal (demo asistente) */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.85);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 30;
+    }
+
+    .modal-backdrop.active {
+      display: flex;
+    }
+
+    .modal {
+      width: 100%;
+      max-width: 430px;
+      border-radius: 22px;
+      background: radial-gradient(circle at top, #1a264b 0, #050814 65%);
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      box-shadow: 0 28px 60px rgba(0, 0, 0, 0.9);
+      padding: 12px 14px 14px;
+      display: flex;
+      flex-direction: column;
+      max-height: calc(100vh - 40px);
+      overflow: hidden;
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 6px;
+    }
+
+    .modal-title {
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+
+    .modal-sub {
+      font-size: 0.73rem;
+      color: var(--muted);
+    }
+
+    .modal-close {
+      border: none;
+      background: rgba(8, 12, 26, 0.96);
+      border-radius: 999px;
+      padding: 4px 8px;
+      font-size: 0.7rem;
+      color: var(--muted);
+      cursor: pointer;
+    }
+
+    .chat-log {
+      flex: 1;
+      margin-top: 6px;
+      border-radius: 14px;
+      background: rgba(7, 11, 26, 0.96);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 10px;
+      overflow-y: auto;
+      font-size: 0.8rem;
+    }
+
+    .chat-bubble {
+      max-width: 80%;
+      padding: 7px 9px;
+      border-radius: 14px;
+      margin-bottom: 6px;
+      line-height: 1.35;
+    }
+
+    .chat-bubble.user {
+      margin-left: auto;
+      background: linear-gradient(135deg, #3ac2ff, #7b61ff);
+      color: #050814;
+      border-bottom-right-radius: 4px;
+    }
+
+    .chat-bubble.bot {
+      margin-right: auto;
+      background: rgba(9, 12, 30, 0.98);
+      border: 1px solid rgba(58, 194, 255, 0.5);
+      border-bottom-left-radius: 4px;
+      color: #f4f7ff;
+    }
+
+    .chat-input-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .chat-input {
+      flex: 1;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(6, 10, 26, 0.98);
+      padding: 8px 12px;
+      font-size: 0.8rem;
+      color: var(--text);
+      outline: none;
+    }
+
+    .chat-input::placeholder {
+      color: var(--muted);
+    }
+
+    .chat-send {
+      border-radius: 999px;
+      border: none;
+      padding: 8px 12px;
+      font-size: 0.8rem;
+      background: radial-gradient(circle at 20% 0, #ffffff 0, #3ac2ff 35%, #005b8e 100%);
+      color: #020710;
+      cursor: pointer;
+    }
+
+    .mini-hint {
+      font-size: 0.7rem;
+      color: var(--muted);
+      margin-top: 4px;
+      text-align: right;
+    }
+
+    /* Mensajes pequeños */
+    .helper-text {
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-top: 6px;
+    }
+
+    .text-danger {
+      color: var(--danger);
+    }
+
+    @media (max-width: 520px) {
+      .app-shell {
+        padding: 8px 8px 72px;
+      }
+
+      .phone-frame {
+        border-radius: 24px;
+        padding: 10px;
+        min-height: calc(100vh - 40px);
+      }
+
+      .phone-inner {
+        border-radius: 18px;
+        padding: 14px 12px 60px;
+      }
+
+      .bottom-nav {
+        height: 46px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <div class="phone-frame">
+      <div class="phone-inner">
+        <div class="content">
+          <!-- Top bar (solo se usa completo en dashboard; en onboarding se simplifica con JS si hace falta) -->
+          <div class="top-bar" id="topBar">
+            <div class="brand">
+              <div class="logo-ring">
+                <div class="logo-core"></div>
+              </div>
+              <div class="brand-text">
+                <div class="brand-title">SmartDrive</div>
+                <div class="brand-subtitle" id="brandSubtitle">Companion App</div>
+              </div>
+            </div>
+            <div class="status-pill" id="statusPill">
+              <span class="status-dot"></span>
+              <span id="statusText">Sin dispositivo</span>
+            </div>
+          </div>
+
+          <!-- Pantalla 1: Bienvenida -->
+          <div class="screen active" id="screen-welcome">
+            <div class="hero">
+              <div class="hero-tag">
+                <span class="hero-tag-dot"></span>
+                Configurá tu asistente
+              </div>
+              <h1 class="hero-title">Tu auto, ahora con cerebro.</h1>
+              <p class="hero-subtitle">
+                Usá esta app para conectar y personalizar tu dispositivo SmartDrive antes de salir a la ruta.
+              </p>
+
+              <div class="hero-illustration">
+                <div class="car-icon">
+                  <div class="car-road"></div>
+                  <div class="car-dot"></div>
+                </div>
+                <div class="hero-text-block">
+                  <p class="hero-text-main">
+                    SmartDrive convierte cualquier viaje en una experiencia inteligente: voz, IA y control total desde tu teléfono.
+                  </p>
+                  <p class="hero-text-sub">
+                    La configuración se hace una sola vez. Después, solo hablás con tu asistente en el auto.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title">Primero lo primero</div>
+                <span class="card-badge">Paso 1 de 3</span>
+              </div>
+              <div class="card-content">
+                <p>Vamos a buscar tu dispositivo SmartDrive cerca y vincularlo a tu cuenta.</p>
+                <p class="card-subtext" style="margin-top:6px;">
+                  Asegurate de que esté conectado a la corriente y con la luz frontal encendida.
+                </p>
+                <button class="btn btn-primary" id="btnGoPair" style="margin-top:10px;">
+                  ➕ Conectar mi SmartDrive
+                </button>
+                <div class="secondary-link">
+                  ¿Ya lo configuraste antes?
+                  <button id="btnSkipToDashboard">Entrar al panel</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Pantalla 2: Emparejar dispositivo -->
+          <div class="screen" id="screen-pair">
+            <div class="hero">
+              <h1 class="hero-title">Buscar tu SmartDrive</h1>
+              <p class="hero-subtitle">
+                Estamos escaneando dispositivos cercanos. Esto puede tardar unos segundos.
+              </p>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title">Dispositivos cercanos</div>
+                <span class="card-badge" id="scanStatusBadge">Escaneando…</span>
+              </div>
+              <div class="card-content">
+                <div class="device-list" id="deviceList">
+                  <!-- JS agrega items de ejemplo -->
+                </div>
+                <p class="helper-text">
+                  Si no ves tu dispositivo, mantené presionado el botón de emparejamiento de SmartDrive durante 3 segundos.
+                </p>
+                <button class="btn btn-ghost small" id="btnRescan" style="margin-top:8px;">
+                  ↻ Volver a escanear
+                </button>
+              </div>
+            </div>
+
+            <button class="btn btn-primary" id="btnToSetup">
+              Continuar con el dispositivo seleccionado
+            </button>
+
+            <div class="secondary-link">
+              <button id="btnBackToWelcome">← Volver atrás</button>
+            </div>
+          </div>
+
+          <!-- Pantalla 3: Configuración inicial -->
+          <div class="screen" id="screen-setup">
+            <div class="hero">
+              <h1 class="hero-title">Configuración rápida</h1>
+              <p class="hero-subtitle">
+                Elegí cómo querés que suene y se vea tu SmartDrive. Podés cambiar todo esto más adelante.
+              </p>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title">Idioma y voz</div>
+              </div>
+              <div class="card-content">
+                <div class="form-grid">
+                  <div class="field">
+                    <span class="field-label">Idioma del asistente</span>
+                    <select class="field-control" id="langSelect">
+                      <option value="es-AR" selected>Español (Argentina)</option>
+                      <option value="es-ES">Español (España)</option>
+                      <option value="en-US">Inglés (US)</option>
+                      <option value="pt-BR">Portugués (Brasil)</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <span class="field-label">Estilo de voz</span>
+                    <div class="chips-row" id="voiceChips">
+                      <button class="chip-option selected" data-value="neutra">
+                        Neutra IA (recomendada)
+                      </button>
+                      <button class="chip-option" data-value="joven">
+                        Joven
+                      </button>
+                      <button class="chip-option" data-value="serena">
+                        Serena
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title">Sonido y visual</div>
+              </div>
+              <div class="card-content">
+                <div class="field">
+                  <span class="field-label">Volumen del dispositivo</span>
+                  <div class="slider-row">
+                    <input type="range" min="0" max="100" value="70" class="slider" id="volumeSlider">
+                    <span class="slider-value" id="volumeValue">70%</span>
+                  </div>
+                </div>
+
+                <div class="field" style="margin-top:8px;">
+                  <span class="field-label">Tema visual</span>
+                  <div class="chips-row" id="themeChips">
+                    <button class="chip-option selected" data-value="neon">
+                      Neón futurista
+                    </button>
+                    <button class="chip-option" data-value="oscuro">
+                      Oscuro clásico
+                    </button>
+                    <button class="chip-option" data-value="claro">
+                      Claro minimal
+                    </button>
+                  </div>
+                </div>
+
+                <div class="toggle-row">
+                  <span>Leer siempre las respuestas en voz alta</span>
+                  <div class="toggle-switch on" id="toggleSpeak">
+                    <div class="toggle-knob"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <button class="btn btn-primary" id="btnFinishSetup">
+              Guardar y entrar al panel
+            </button>
+
+            <div class="secondary-link">
+              <button id="btnSkipSetup">Saltar y usar valores por defecto</button>
+            </div>
+          </div>
+
+          <!-- Pantalla 4: Dashboard principal -->
+          <div class="screen" id="screen-dashboard">
+            <div class="hero">
+              <h1 class="hero-title" id="dashTitle">Panel de tu SmartDrive</h1>
+              <p class="hero-subtitle" id="dashSubtitle">
+                Estado del dispositivo, accesos rápidos y ajustes, todo en un solo lugar.
+              </p>
+            </div>
+
+            <div class="grid">
+              <!-- Asistente -->
+              <div class="card">
+                <div class="card-header">
+                  <div class="card-title">Asistente</div>
+                  <span class="card-badge">IA activa</span>
+                </div>
+                <div class="card-content">
+                  <p>Probá cómo responde tu SmartDrive antes de subirte al auto.</p>
+                  <div class="pill-row">
+                    <span class="pill accent">Modo estándar</span>
+                    <span class="pill">Modo estudio</span>
+                    <span class="pill">Modo viaje largo</span>
+                  </div>
+                  <button class="btn btn-primary" id="btnOpenAssistant" style="margin-top:10px;">
+                    🎙 Probar asistente
+                  </button>
+                </div>
+              </div>
+
+              <!-- Integraciones -->
+              <div class="card">
+                <div class="card-header">
+                  <div class="card-title">Integraciones</div>
+                </div>
+                <div class="card-content">
+                  <p>Conectá tus servicios favoritos para sacarle más jugo al dispositivo.</p>
+                  <div class="pill-row" style="margin-top:8px;">
+                    <span class="pill accent">Spotify</span>
+                    <span class="pill accent">Google Maps</span>
+                    <span class="pill">WhatsApp (próximamente)</span>
+                  </div>
+                  <button class="btn btn-ghost small" style="margin-top:8px;">
+                    ⚙️ Gestionar integraciones
+                  </button>
+                </div>
+              </div>
+
+              <!-- Modo y seguridad -->
+              <div class="card">
+                <div class="card-header">
+                  <div class="card-title">Modo actual</div>
+                  <span class="card-badge">Recomendado</span>
+                </div>
+                <div class="card-content">
+                  <p id="modeText">Modo estándar: respuestas claras y directas para todo tipo de consulta.</p>
+                  <button class="btn btn-ghost small" style="margin-top:8px;">
+                    Cambiar modo
+                  </button>
+                  <p class="helper-text">
+                    Podés crear modos personalizados más adelante (ej: “solo estudio”, “modo copiloto”).
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom nav -->
+        <div class="bottom-nav" id="bottomNav">
+          <div class="nav-item active" data-target="screen-dashboard" id="navHome">
+            <span class="nav-icon">🏠</span>
+            Inicio
+            <div class="nav-pill"></div>
+          </div>
+          <div class="nav-item" data-target="screen-setup" id="navSettings">
+            <span class="nav-icon">⚙️</span>
+            Ajustes
+            <div class="nav-pill"></div>
+          </div>
+          <div class="nav-item" data-target="screen-pair" id="navDevices">
+            <span class="nav-icon">📡</span>
+            Dispositivo
+            <div class="nav-pill"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de asistente -->
+  <div class="modal-backdrop" id="assistantModal">
+    <div class="modal">
+      <div class="modal-header">
+        <div>
+          <div class="modal-title">Probar SmartDrive</div>
+          <div class="modal-sub">Esto es solo una demo visual. En la versión real se conecta a tu backend.</div>
+        </div>
+        <button class="modal-close" id="btnCloseModal">Cerrar</button>
+      </div>
+      <div class="chat-log" id="chatLog">
+        <div class="chat-bubble bot">
+          ¡Hola! Soy tu SmartDrive. Probá escribirme algo como “explicame qué es la inflación” o “recomendame una playlist para estudiar”.
+        </div>
+      </div>
+      <form class="chat-input-row" id="chatForm">
+        <input type="text" class="chat-input" id="chatInput" placeholder="Escribí tu mensaje…" autocomplete="off">
+        <button type="submit" class="chat-send">Enviar</button>
+      </form>
+      <div class="mini-hint">
+        En el producto real, este chat habla con tu servidor de IA.
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Utilidad para cambiar de pantalla
+    const screens = {
+      welcome: document.getElementById("screen-welcome"),
+      pair: document.getElementById("screen-pair"),
+      setup: document.getElementById("screen-setup"),
+      dashboard: document.getElementById("screen-dashboard"),
+    };
+
+    const bottomNav = document.getElementById("bottomNav");
+    const navItems = bottomNav.querySelectorAll(".nav-item");
+    const brandSubtitle = document.getElementById("brandSubtitle");
+    const statusPill = document.getElementById("statusPill");
+    const statusText = document.getElementById("statusText");
+
+    let selectedDevice = null;
+    let deviceConfigured = false;
+
+    function showScreen(id) {
+      Object.values(screens).forEach((s) => s.classList.remove("active"));
+      if (screens[id]) screens[id].classList.add("active");
+    }
+
+    function setNavActive(targetScreenId) {
+      navItems.forEach((item) => {
+        const t = item.getAttribute("data-target");
+        if (t === targetScreenId) {
+          item.classList.add("active");
+        } else {
+          item.classList.remove("active");
+        }
+      });
+    }
+
+    // Inicial: solo se ve bienvenida, nav "apagado" visualmente hasta que haya panel
+    function initState() {
+      showScreen("welcome");
+      bottomNav.style.opacity = "0";
+      bottomNav.style.pointerEvents = "none";
+      brandSubtitle.textContent = "Companion App";
+      statusText.textContent = "Sin dispositivo";
+      statusPill.style.opacity = "0.6";
+    }
+    initState();
+
+    // Botones navegación onboarding
+    document.getElementById("btnGoPair").addEventListener("click", () => {
+      showScreen("pair");
+      generateMockDevices();
+    });
+
+    document.getElementById("btnBackToWelcome").addEventListener("click", () => {
+      showScreen("welcome");
+    });
+
+    document.getElementById("btnSkipToDashboard").addEventListener("click", () => {
+      // Simulamos que hay un dispositivo ya guardado
+      selectedDevice = { name: "SmartDrive-01A3", id: "01A3" };
+      enterDashboard();
+    });
+
+    // Emparejar - lista falsa de dispositivos
+    const deviceListEl = document.getElementById("deviceList");
+    const scanStatusBadge = document.getElementById("scanStatusBadge");
+    const btnRescan = document.getElementById("btnRescan");
+    const btnToSetup = document.getElementById("btnToSetup");
+
+    function generateMockDevices() {
+      deviceListEl.innerHTML = "";
+      scanStatusBadge.textContent = "Escaneando…";
+
+      setTimeout(() => {
+        const mockDevices = [
+          { name: "SmartDrive-01A3", distance: "Muy cerca", battery: "82%" },
+          { name: "SmartDrive-GX77", distance: "Cerca", battery: "64%" },
+        ];
+
+        mockDevices.forEach((d, idx) => {
+          const item = document.createElement("div");
+          item.className = "device-item";
+          item.dataset.index = idx;
+
+          const main = document.createElement("div");
+          main.className = "device-main";
+
+          const name = document.createElement("div");
+          name.className = "device-name";
+          name.textContent = d.name;
+
+          const meta = document.createElement("div");
+          meta.className = "device-meta";
+          meta.textContent = `${d.distance} · Batería ${d.battery}`;
+
+          main.appendChild(name);
+          main.appendChild(meta);
+
+          const status = document.createElement("div");
+          status.className = "device-status";
+          status.textContent = "Tap para seleccionar";
+
+          item.appendChild(main);
+          item.appendChild(status);
+
+          item.addEventListener("click", () => {
+            // Marcar seleccionado
+            const all = deviceListEl.querySelectorAll(".device-item");
+            all.forEach((i) => i.classList.remove("selected"));
+            item.classList.add("selected");
+            selectedDevice = d;
+            status.textContent = "Seleccionado";
+          });
+
+          deviceListEl.appendChild(item);
+        });
+
+        scanStatusBadge.textContent = "2 encontrados";
+      }, 800);
+    }
+
+    btnRescan.addEventListener("click", () => {
+      generateMockDevices();
+      selectedDevice = null;
+    });
+
+    btnToSetup.addEventListener("click", () => {
+      if (!selectedDevice) {
+        alert("Elegí un dispositivo de la lista para continuar.");
+        return;
+      }
+      showScreen("setup");
+    });
+
+    // Configuración inicial
+    const volumeSlider = document.getElementById("volumeSlider");
+    const volumeValue = document.getElementById("volumeValue");
+    volumeSlider.addEventListener("input", () => {
+      volumeValue.textContent = volumeSlider.value + "%";
+    });
+
+    function initChipGroup(groupId) {
+      const container = document.getElementById(groupId);
+      const chips = container.querySelectorAll(".chip-option");
+      chips.forEach((chip) => {
+        chip.addEventListener("click", () => {
+          chips.forEach((c) => c.classList.remove("selected"));
+          chip.classList.add("selected");
+        });
+      });
+    }
+
+    initChipGroup("voiceChips");
+    initChipGroup("themeChips");
+
+    const toggleSpeak = document.getElementById("toggleSpeak");
+    toggleSpeak.addEventListener("click", () => {
+      toggleSpeak.classList.toggle("on");
+    });
+
+    function enterDashboard() {
+      deviceConfigured = true;
+      showScreen("dashboard");
+      setNavActive("screen-dashboard");
+      bottomNav.style.opacity = "1";
+      bottomNav.style.pointerEvents = "auto";
+      brandSubtitle.textContent = selectedDevice
+        ? selectedDevice.name
+        : "SmartDrive conectado";
+      statusText.textContent = "Conectado";
+      statusPill.style.opacity = "1";
+    }
+
+    document.getElementById("btnFinishSetup").addEventListener("click", () => {
+      enterDashboard();
+    });
+
+    document.getElementById("btnSkipSetup").addEventListener("click", () => {
+      enterDashboard();
+    });
+
+    // Bottom nav real
+    navItems.forEach((item) => {
+      item.addEventListener("click", () => {
+        const target = item.getAttribute("data-target");
+        if (!deviceConfigured && target !== "screen-pair") {
+          alert("Primero conectá tu SmartDrive para acceder a estas secciones.");
+          return;
+        }
+        setNavActive(target);
+        if (target === "screen-dashboard") {
+          showScreen("dashboard");
+        } else if (target === "screen-setup") {
+          showScreen("setup");
+        } else if (target === "screen-pair") {
+          showScreen("pair");
+          generateMockDevices();
+        }
+      });
+    });
+
+    // Desde onboarding, cuando entra directo al panel, marcamos nav
+    document.getElementById("btnSkipToDashboard").addEventListener("click", () => {
+      setNavActive("screen-dashboard");
+    });
+
+    // Modal asistente (demo visual, sin backend)
+    const assistantModal = document.getElementById("assistantModal");
+    const btnOpenAssistant = document.getElementById("btnOpenAssistant");
+    const btnCloseModal = document.getElementById("btnCloseModal");
+    const chatLog = document.getElementById("chatLog");
+    const chatForm = document.getElementById("chatForm");
+    const chatInput = document.getElementById("chatInput");
+
+    btnOpenAssistant.addEventListener("click", () => {
+      assistantModal.classList.add("active");
+      chatInput.focus();
+    });
+
+    btnCloseModal.addEventListener("click", () => {
+      assistantModal.classList.remove("active");
+    });
+
+    chatForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const text = chatInput.value.trim();
+      if (!text) return;
+
+      const userBubble = document.createElement("div");
+      userBubble.className = "chat-bubble user";
+      userBubble.textContent = text;
+      chatLog.appendChild(userBubble);
+
+      chatInput.value = "";
+      chatLog.scrollTop = chatLog.scrollHeight;
+
+      // Respuesta falsa de demo
+      setTimeout(() => {
+        const botBubble = document.createElement("div");
+        botBubble.className = "chat-bubble bot";
+        botBubble.textContent =
+          "En la versión real, esta respuesta vendría de tu servidor de IA. " +
+          "Por ahora, imaginemos que SmartDrive te está ayudando con: \"" +
+          text +
+          "\" 🙂";
+        chatLog.appendChild(botBubble);
+        chatLog.scrollTop = chatLog.scrollHeight;
+      }, 700);
+    });
+  </script>
+</body>
+</html>
