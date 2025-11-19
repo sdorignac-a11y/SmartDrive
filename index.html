@@ -294,7 +294,10 @@
         <div class="panel">
           <div class="panel-title">Conversación</div>
           <div id="log">
-            <span class="log-label">SmartDrive:</span> Tocá el botón del micrófono y preguntame lo que quieras.
+            <div>
+              <span class="log-label">SmartDrive:</span>
+              Tocá el botón del micrófono y preguntame lo que quieras.
+            </div>
           </div>
         </div>
 
@@ -309,7 +312,7 @@
               Estado: <span>Listo para escuchar</span>
             </div>
             <div class="tip">
-              Ejemplos: “¿Qué es una economía de escala?”, “¿Cómo llego de acá a Mar del Plata?”, “Explicame el IVA dédito y crédito”.
+              Ejemplos: “¿Qué es una economía de escala?”, “¿Cómo llego de acá a Mar del Plata?”, “Explicame el IVA débito y crédito”.
             </div>
             <div class="error" id="error"></div>
           </div>
@@ -328,6 +331,16 @@
     let recognition = null;
     let listening = false;
 
+    // 🧵 historial local para dar contexto a la IA
+    let conversation = [];
+
+    // 👤 id "persistente" por dispositivo (para memoria ligera en el backend)
+    let userId = localStorage.getItem("smartdriveUserId");
+    if (!userId) {
+      userId = "user-" + Math.random().toString(36).slice(2);
+      localStorage.setItem("smartdriveUserId", userId);
+    }
+
     // Config reconocimiento de voz
     if ("webkitSpeechRecognition" in window || "SpeechRecognition" in window) {
       const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -339,10 +352,55 @@
       errorDiv.textContent = "Tu navegador no soporta reconocimiento de voz.";
     }
 
-    function appendToLog(prefix, text) {
-      const current = logDiv.textContent ? logDiv.textContent + "\n\n" : "";
-      logDiv.textContent = current + prefix + text;
+    function appendToLog(who, text) {
+      const line = document.createElement("div");
+      const label = document.createElement("span");
+      label.className = "log-label";
+      label.textContent = who + ": ";
+      line.appendChild(label);
+      line.appendChild(document.createTextNode(text));
+      logDiv.appendChild(line);
       logDiv.scrollTop = logDiv.scrollHeight;
+    }
+
+    async function handleTranscript(transcript) {
+      appendToLog("Vos", transcript);
+
+      // Agregamos al historial
+      conversation.push({ role: "user", content: transcript });
+
+      // Sólo mandamos los últimos 8 mensajes como contexto
+      const contextToSend = conversation.slice(-8);
+
+      try {
+        const resp = await fetch("/api/chat", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            userId,
+            messages: contextToSend,
+          }),
+        });
+
+        const data = await resp.json();
+        const respuestaIA = data.reply || "(sin respuesta)";
+
+        // guardamos respuesta en historial
+        conversation.push({ role: "assistant", content: respuestaIA });
+        appendToLog("SmartDrive", respuestaIA);
+
+        // Leer en voz alta
+        const utter = new SpeechSynthesisUtterance(respuestaIA);
+        utter.lang = "es-ES";
+        speechSynthesis.speak(utter);
+      } catch (err) {
+        console.error(err);
+        errorDiv.textContent = "Error conectando con el servidor.";
+      } finally {
+        statusDiv.textContent = "Listo para escuchar";
+      }
     }
 
     micBtn.addEventListener("click", () => {
@@ -367,31 +425,7 @@
         statusDiv.textContent = "Procesando…";
 
         const transcript = event.results[0][0].transcript;
-        appendToLog("Vos: ", transcript);
-
-        try {
-          const resp = await fetch("/api/chat", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ message: transcript }),
-          });
-
-          const data = await resp.json();
-          const respuestaIA = data.reply || "(sin respuesta)";
-          appendToLog("SmartDrive: ", respuestaIA);
-
-          // Leer en voz alta
-          const utter = new SpeechSynthesisUtterance(respuestaIA);
-          utter.lang = "es-ES";
-          speechSynthesis.speak(utter);
-        } catch (err) {
-          console.error(err);
-          errorDiv.textContent = "Error conectando con el servidor.";
-        } finally {
-          statusDiv.textContent = "Listo para escuchar";
-        }
+        await handleTranscript(transcript);
       });
 
       recognition.addEventListener("error", (e) => {
